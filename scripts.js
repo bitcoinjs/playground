@@ -32,8 +32,8 @@ function p2pkh (a) {
   if (input) {
     let chunks = bscript.decompile(input)
     if (chunks.length !== 2 ||
-      bscript.isCanonicalSignature(chunks[0]) ||
-      bscript.isCanonicalPubKey(chunks[1])) throw new TypeError('P2PKH input is invalid')
+      !bscript.isCanonicalSignature(chunks[0]) ||
+      !bscript.isCanonicalPubKey(chunks[1])) throw new TypeError('P2PKH input is invalid')
 
     if (pubkey && !pubkey.equals(chunks[1])) throw new TypeError('P2PKH pubkey mismatch')
     if (hash && !pubkey && !hash.equals(bcrypto.hash160(chunks[1]))) throw new TypeError('P2PKH hash mismatch')
@@ -79,18 +79,17 @@ function p2pkh (a) {
 }
 
 var keyPair = bitcoin.ECPair.makeRandom()
-var result = p2pkh({ pubkey: keyPair.getPublicKeyBuffer() })
-console.log(p2pkh({
-  pubkey: keyPair.getPublicKeyBuffer()
-}))
+var pubkey = keyPair.getPublicKeyBuffer()
+var signature = keyPair.sign(Buffer.alloc(32)).toScriptSignature(0x01)
 
-console.log(p2pkh({
-  hash: bcrypto.hash160(keyPair.getPublicKeyBuffer())
-}))
+var result1 = p2pkh({ pubkey, signature })
+var result2 = p2pkh({ pubkey })
 
-console.log(p2pkh({
-  output: result.output
-}))
+console.log('everything', p2pkh({ pubkey, signature }))
+console.log('output only', p2pkh({ pubkey }))
+console.log('output only', p2pkh({ hash: bcrypto.hash160(pubkey) }))
+console.log('everything', p2pkh({ input: result1.input }))
+console.log('output only', p2pkh({ output: result2.output }))
 
 function p2wpkh () {
 
