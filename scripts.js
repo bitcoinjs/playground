@@ -4,6 +4,7 @@ let bscript = bitcoin.script
 let types = require('../bitcoinjs-lib/src/types')
 let typeforce = require('typeforce')
 let OPS = require('bitcoin-ops')
+let tape = require('tape')
 
 function p2pk () {
 
@@ -25,8 +26,6 @@ function p2pkh (a) {
   if (a.hash && a.pubkey && !bcrypto.hash160(a.pubkey).equals(a.hash)) throw new TypeError('P2PKH hash mismatch')
 
   let pubkey = a.pubkey
-  let hash = a.hash
-  let output = a.output
   let input = a.input
   let signature = a.signature
   if (input) {
@@ -36,17 +35,20 @@ function p2pkh (a) {
       !bscript.isCanonicalPubKey(chunks[1])) throw new TypeError('P2PKH input is invalid')
 
     if (pubkey && !pubkey.equals(chunks[1])) throw new TypeError('P2PKH pubkey mismatch')
-    if (hash && !pubkey && !hash.equals(bcrypto.hash160(chunks[1]))) throw new TypeError('P2PKH hash mismatch')
     pubkey = chunks[1]
     signature = chunks[0]
   } else if (signature && pubkey) {
     input = bscript.compile([signature, pubkey])
   }
 
+  let hash = a.hash
   if (pubkey) {
-    hash = bcrypto.hash160(pubkey)
+    if (hash) {
+      if (!hash.equals(bcrypto.hash160(pubkey))) throw new TypeError('P2PKH hash mismatch')
+    } else hash = bcrypto.hash160(pubkey)
   }
 
+  let output = a.output
   if (output) {
     if (output[0] !== OPS.OP_DUP ||
       output[1] !== OPS.OP_HASH160 ||
@@ -55,8 +57,9 @@ function p2pkh (a) {
       output[24] !== OPS.OP_CHECKSIG) throw new TypeError('P2PKH output is invalid')
 
     let tmp = output.slice(3, 23)
-    if (hash && !hash.equals(tmp)) throw new TypeError('P2PKH hash mismatch')
-    hash = tmp
+    if (hash) {
+      if (!hash.equals(tmp)) throw new TypeError('P2PKH hash mismatch')
+    } else hash = tmp
   } else if (hash) {
     output = bscript.compile([
       OPS.OP_DUP,
@@ -85,11 +88,39 @@ var signature = keyPair.sign(Buffer.alloc(32)).toScriptSignature(0x01)
 var result1 = p2pkh({ pubkey, signature })
 var result2 = p2pkh({ pubkey })
 
-console.log('everything', p2pkh({ pubkey, signature }))
-console.log('output only', p2pkh({ pubkey }))
-console.log('output only', p2pkh({ hash: bcrypto.hash160(pubkey) }))
-console.log('everything', p2pkh({ input: result1.input }))
-console.log('output only', p2pkh({ output: result2.output }))
+tape('derives everything', (t) => {
+  function hasEverything (a) {
+    return typeforce({
+      hash: types.Hash160bit,
+      input: types.Buffer,
+      output: types.BufferN(25),
+      pubkey: bscript.isCanonicalPubKey,
+      signature: bscript.isCanonicalSignature
+  //      address: types.maybe(types.Base58),
+  //      network: types.maybe(types.Network)
+    }, a)
+  }
+
+  t.plan(2)
+  t.ok(hasEverything(p2pkh({ pubkey, signature })))
+  t.ok(hasEverything(p2pkh({ input: result1.input })))
+})
+
+tape('derives output only', (t) => {
+  function hasSome (a) {
+    return typeforce({
+      hash: types.Hash160bit,
+      output: types.BufferN(25)
+  //      address: types.maybe(types.Base58),
+  //      network: types.maybe(types.Network)
+    }, a)
+  }
+
+  t.plan(3)
+  t.ok(hasSome(p2pkh({ pubkey })))
+  t.ok(hasSome(p2pkh({ hash: bcrypto.hash160(pubkey) })))
+  t.ok(hasSome(p2pkh({ output: result2.output })))
+})
 
 function p2wpkh () {
 
