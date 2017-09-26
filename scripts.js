@@ -1,6 +1,7 @@
-let bcrypto = require('../../crypto')
-let bscript = require('../../script')
-let types = require('../../types')
+var bitcoin = require('bitcoinjs-lib')
+let bcrypto = bitcoin.crypto
+let bscript = bitcoin.script
+let types = require('../bitcoinjs-lib/src/types')
 let typeforce = require('typeforce')
 let OPS = require('bitcoin-ops')
 
@@ -11,13 +12,14 @@ function p2pk () {
 // {signature} {pubkey}
 // OP_DUP OP_HASH160 {pubkeyhash} OP_EQUALVERIFY OP_CHECKSIG
 function p2pkh (o) {
-  typeforce(o, {
+  typeforce({
+//      address: types.maybe(types.Base58),
     hash: types.maybe(types.Hash160bit),
     input: types.maybe(types.Buffer),
     output: types.maybe(types.Buffer),
-    pubkey: types.maybe(types.oneOf(bscript.isCanonicalPubKey, types.ECPair)),
-    signature: types.maybe([bscript.isCanonicalSignature])
-  })
+    pubkey: types.maybe(bscript.isCanonicalPubKey),
+    signature: types.maybe(bscript.isCanonicalSignature)
+  }, o)
 
   if (o.hash && o.pubkey && !bcrypto.hash160(o.pubkey).equals(o.hash)) throw new TypeError('P2PKH hash mismatch')
 
@@ -25,7 +27,6 @@ function p2pkh (o) {
   let hash = o.hash
   let output = o.output
   if (pubkey) {
-    if (types.ECPair(pubkey)) pubkey = pubkey.getPublicKeyBuffer()
     hash = bcrypto.hash160(pubkey)
   }
 
@@ -66,14 +67,28 @@ function p2pkh (o) {
     input = bscript.compile([signature, pubkey])
   }
 
-  return {
-    hash,
-    input,
-    output,
-    pubkey,
-    signature
-  }
+  var result = {}
+  if (hash) result.hash = hash
+  if (input) result.input = input
+  if (output) result.output = output
+  if (pubkey) result.pubkey = pubkey
+  if (signature) result.signature = signature
+  return result
 }
+
+var keyPair = bitcoin.ECPair.makeRandom()
+var result = p2pkh({ pubkey: keyPair.getPublicKeyBuffer() })
+console.log(p2pkh({
+  pubkey: keyPair.getPublicKeyBuffer()
+}))
+
+console.log(p2pkh({
+  hash: bcrypto.hash160(keyPair.getPublicKeyBuffer())
+}))
+
+console.log(p2pkh({
+  output: result.output
+}))
 
 function p2wpkh () {
 
