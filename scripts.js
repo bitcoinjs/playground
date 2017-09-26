@@ -15,7 +15,7 @@ function p2pkh (a) {
   typeforce({
     hash: types.maybe(types.Hash160bit),
     input: types.maybe(types.Buffer),
-    output: types.maybe(types.Buffer),
+    output: types.maybe(types.BufferN(25)),
     pubkey: types.maybe(bscript.isCanonicalPubKey),
     signature: types.maybe(bscript.isCanonicalSignature)
 //      address: types.maybe(types.Base58),
@@ -48,8 +48,7 @@ function p2pkh (a) {
   }
 
   if (output) {
-    if (output.length !== 25 ||
-      output[0] !== OPS.OP_DUP ||
+    if (output[0] !== OPS.OP_DUP ||
       output[1] !== OPS.OP_HASH160 ||
       output[2] !== 0x14 ||
       output[23] !== OPS.OP_EQUALVERIFY ||
