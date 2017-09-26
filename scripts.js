@@ -11,21 +11,38 @@ function p2pk () {
 
 // {signature} {pubkey}
 // OP_DUP OP_HASH160 {pubkeyhash} OP_EQUALVERIFY OP_CHECKSIG
-function p2pkh (o) {
+function p2pkh (a) {
   typeforce({
-//      address: types.maybe(types.Base58),
     hash: types.maybe(types.Hash160bit),
     input: types.maybe(types.Buffer),
     output: types.maybe(types.Buffer),
     pubkey: types.maybe(bscript.isCanonicalPubKey),
     signature: types.maybe(bscript.isCanonicalSignature)
-  }, o)
+//      address: types.maybe(types.Base58),
+//      network: types.maybe(types.Network)
+  }, a)
 
-  if (o.hash && o.pubkey && !bcrypto.hash160(o.pubkey).equals(o.hash)) throw new TypeError('P2PKH hash mismatch')
+  if (a.hash && a.pubkey && !bcrypto.hash160(a.pubkey).equals(a.hash)) throw new TypeError('P2PKH hash mismatch')
 
-  let pubkey = o.pubkey
-  let hash = o.hash
-  let output = o.output
+  let pubkey = a.pubkey
+  let hash = a.hash
+  let output = a.output
+  let input = a.input
+  let signature = a.signature
+  if (input) {
+    let chunks = bscript.decompile(input)
+    if (chunks.length !== 2 ||
+      bscript.isCanonicalSignature(chunks[0]) ||
+      bscript.isCanonicalPubKey(chunks[1])) throw new TypeError('P2PKH input is invalid')
+
+    if (pubkey && !pubkey.equals(chunks[1])) throw new TypeError('P2PKH pubkey mismatch')
+    if (hash && !pubkey && !hash.equals(bcrypto.hash160(chunks[1]))) throw new TypeError('P2PKH hash mismatch')
+    pubkey = chunks[1]
+    signature = chunks[0]
+  } else if (signature && pubkey) {
+    input = bscript.compile([signature, pubkey])
+  }
+
   if (pubkey) {
     hash = bcrypto.hash160(pubkey)
   }
@@ -51,28 +68,14 @@ function p2pkh (o) {
     ])
   }
 
-  let input = o.input
-  let signature = o.signature
-  if (input) {
-    let chunks = bscript.decompile(input)
-    if (chunks.length !== 2 ||
-      bscript.isCanonicalSignature(chunks[0]) ||
-      bscript.isCanonicalPubKey(chunks[1])) throw new TypeError('P2PKH input is invalid')
-
-    if (pubkey && !pubkey.equals(chunks[1])) throw new TypeError('P2PKH pubkey mismatch')
-    if (hash && !pubkey && !hash.equals(bcrypto.hash160(chunks[1]))) throw new TypeError('P2PKH hash mismatch')
-    pubkey = chunks[1]
-    signature = chunks[0]
-  } else if (signature && pubkey) {
-    input = bscript.compile([signature, pubkey])
-  }
-
   var result = {}
   if (hash) result.hash = hash
   if (input) result.input = input
   if (output) result.output = output
   if (pubkey) result.pubkey = pubkey
   if (signature) result.signature = signature
+//    if (address) result.address = address
+//    if (network) result.network = network
   return result
 }
 
