@@ -281,10 +281,6 @@ function p2sh (a) {
   if (redeem) {
     if (network && network !== redeem.network) throw new TypeError('Network mismatch')
     if (!network) network = redeem.network
-    if (redeem.input) {
-      let redeemInputChunks = bscript.decompile(redeem.input)
-      if (!bscript.isPushOnly(redeemInputChunks)) throw new TypeError('Non push-only scriptSig')
-    }
 
     // is redeemScript a valid script?
     let redeemOutputChunks = bscript.decompile(redeem.output)
@@ -293,6 +289,17 @@ function p2sh (a) {
     let redeemOutputHash = bcrypto.hash160(redeem.output)
     if (hash && !hash.equals(redeemOutputHash)) throw new TypeError('Hash mismatch')
     if (!hash) hash = redeemOutputHash
+
+    if (redeem.input) {
+      if (redeem.input.length === 0 && !redeem.witness) throw new TypeError('Missing witness')
+      if (redeem.input.length !== 0 && redeem.witness) throw new TypeError('Unexpected witness')
+
+      if (!witness && redeem.witness) witness = redeem.witness
+
+      let redeemInputChunks = bscript.decompile(redeem.input)
+      if (!bscript.isPushOnly(redeemInputChunks)) throw new TypeError('Non push-only scriptSig')
+      if (!input) input = bscript.compile([].concat(redeemInputChunks, redeem.output))
+    }
   }
 
   // default as late as possible
