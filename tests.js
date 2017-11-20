@@ -4,8 +4,7 @@ let {
   script: bscript
 } = require('bitcoinjs-lib')
 let tape = require('tape')
-let types = require('bitcoinjs-lib/src/types')
-let typeforce = require('typeforce')
+let typef = require('typeforce')
 let { p2pk, p2pkh, p2wpkh, p2sh, p2wsh, p2ms } = require('./scripts')
 
 let keyPair = ECPair.makeRandom()
@@ -14,17 +13,18 @@ let signature = keyPair.sign(Buffer.alloc(32)).toScriptSignature(0x01)
 
 let result1 = p2pkh({ pubkey, signature })
 let result2 = p2pkh({ pubkey })
+let result3 = p2sh({ redeem: p2pkh({ pubkey }) })
 
 tape('derives everything', (t) => {
   function hasEverything (a) {
-    return typeforce({
-      hash: types.Hash160bit,
-      input: types.Buffer,
-      output: types.BufferN(25),
+    return typef({
+      address: typef.String,
+      hash: typef.BufferN(20),
+      input: typef.Buffer,
+      network: typef.Object,
+      output: typef.BufferN(25),
       pubkey: bscript.isCanonicalPubKey,
       signature: bscript.isCanonicalSignature
-  //      address: types.maybe(types.Base58),
-  //      network: types.maybe(types.Network)
     }, a)
   }
 
@@ -35,11 +35,14 @@ tape('derives everything', (t) => {
 
 tape('derives output only', (t) => {
   function hasSome (a) {
-    return typeforce({
-      hash: types.Hash160bit,
-      output: types.BufferN(25)
-  //      address: types.maybe(types.Base58),
-  //      network: types.maybe(types.Network)
+    return typef({
+      address: typef.String,
+      hash: typef.BufferN(20),
+      input: typef.maybe(typef.Buffer),
+      network: typef.Object,
+      output: typef.BufferN(25),
+      pubkey: typef.maybe(bscript.isCanonicalPubKey),
+      signature: typef.maybe(bscript.isCanonicalSignature)
     }, a)
   }
 
@@ -48,7 +51,3 @@ tape('derives output only', (t) => {
   t.ok(hasSome(p2pkh({ hash: bcrypto.hash160(pubkey) })))
   t.ok(hasSome(p2pkh({ output: result2.output })))
 })
-
-module.exports = {
-  p2pk, p2pkh, p2wpkh, p2sh, p2wsh, p2ms
-}

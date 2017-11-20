@@ -1,33 +1,61 @@
 let {
-  address: baddress,
   crypto: bcrypto,
+  networks: bnetworks,
   script: bscript
 } = require('bitcoinjs-lib')
+let bs58check = require('bs58check')
 let typef = require('typeforce')
 let OPS = require('bitcoin-ops')
+
+function toBase58Check (hash, version) {
+  typef(typef.tuple(typef.BufferN(20), typef.UInt8), arguments)
+
+  var payload = Buffer.allocUnsafe(21)
+  payload.writeUInt8(version, 0)
+  hash.copy(payload, 1)
+
+  return bs58check.encode(payload)
+}
+
+function fromBase58Check (address) {
+  var payload = bs58check.decode(address)
+  if (payload.length < 21) throw new TypeError(address + ' is too short')
+  if (payload.length > 21) throw new TypeError(address + ' is too long')
+
+  var version = payload.readUInt8(0)
+  var hash = payload.slice(1)
+
+  return { version: version, hash: hash }
+}
 
 function p2pk () {
 
 }
 
 // {signature} {pubkey}
-// OP_DUP OP_HASH160 {pubkeyhash} OP_EQUALVERIFY OP_CHECKSIG
+// OP_DUP OP_HASH160 {pubKeyHash} OP_EQUALVERIFY OP_CHECKSIG
 function p2pkh (a) {
   typef({
+    address: typef.maybe(typef.String),
     hash: typef.maybe(typef.BufferN(20)),
     input: typef.maybe(typef.Buffer),
+    network: typef.maybe(typef.Object),
     output: typef.maybe(typef.BufferN(25)),
     pubkey: typef.maybe(bscript.isCanonicalPubKey),
-    signature: typef.maybe(bscript.isCanonicalSignature),
-    address: typef.maybe(typef.String),
-    network: typef.maybe(typef.Object)
+    signature: typef.maybe(bscript.isCanonicalSignature)
   }, a)
 
-  let hash = a.hash
-  let pubkey = a.pubkey
   let input = a.input
+  let pubkey = a.pubkey
   let signature = a.signature
-  if (input) {
+
+  if (pubkey && signature) {
+    let script = bscript.compile([signature, pubkey])
+    if (input && !input.equals(script)) throw new TypeError('Input mismatch')
+    if (!input) input = script
+
+  // decompile input for data
+  } else if (input) {
     let chunks = bscript.decompile(input)
     if (chunks.length !== 2 ||
       !bscript.isCanonicalSignature(chunks[0]) ||
@@ -40,10 +68,22 @@ function p2pkh (a) {
     if (!pubkey) pubkey = chunks[1]
   }
 
-  if (signature && pubkey) {
-    let script = bscript.compile([signature, pubkey])
-    if (input && !input.equals(script)) throw new TypeError('Input mismatch')
-    if (!input) input = script
+  let hash = a.hash
+  if (pubkey) {
+    let pubKeyHash = bcrypto.hash160(pubkey)
+
+    if (hash && !hash.equals(pubKeyHash)) throw new TypeError('Hash mismatch')
+    if (!hash) hash = pubKeyHash
+  }
+
+  let network = a.network || bnetworks.bitcoin
+  let address = a.address
+  if (address) {
+    let decode = fromBase58Check(address)
+    if (network && network.pubKeyHash !== decode.version) throw new TypeError('Network mismatch')
+
+    if (hash && !hash.equals(decode.hash)) throw new TypeError('Hash mismatch')
+    if (!hash) hash = decode.hash
   }
 
   let output = a.output
@@ -56,29 +96,17 @@ function p2pkh (a) {
       output[23] !== OPS.OP_EQUALVERIFY ||
       output[24] !== OPS.OP_CHECKSIG) throw new TypeError('Output is invalid')
 
-    let pubkeyhash = output.slice(3, 23)
-    if (hash && !hash.equals(pubkeyhash)) throw new TypeError('Hash mismatch')
-    if (!hash) hash = pubkeyhash
+    let pubKeyHash = output.slice(3, 23)
+    if (hash && !hash.equals(pubKeyHash)) throw new TypeError('Hash mismatch')
+    if (!hash) hash = pubKeyHash
   }
 
-  let network = a.network
-  let address = a.address
-  if (address) {
-    let decode = baddress.fromBase58Check(address)
-    if (network && network.pubkeyhash !== decode.version) throw new TypeError('Network mismatch')
-
-    if (hash && !hash.equals(decode.hash)) throw new TypeError('Hash mismatch')
-    if (!hash) hash = decode.hash
+  // non-essential derivations
+  if (!address) {
+    address = toBase58Check(hash, network.pubKeyHash)
   }
 
-  if (pubkey) {
-    let pubkeyhash = bcrypto.hash160(pubkey)
-
-    if (hash && !hash.equals(pubkeyhash)) throw new TypeError('Hash mismatch')
-    if (!hash) hash = pubkeyhash
-  }
-
-  if (hash) {
+  if (!output) {
     output = bscript.compile([
       OPS.OP_DUP,
       OPS.OP_HASH160,
@@ -89,13 +117,13 @@ function p2pkh (a) {
   }
 
   let result = {}
+  if (address) result.address = address
   if (hash) result.hash = hash
   if (input) result.input = input
+  if (network) result.network = network
   if (output) result.output = output
   if (pubkey) result.pubkey = pubkey
   if (signature) result.signature = signature
-  if (address) result.address = address
-  if (network) result.network = network
   return result
 }
 
@@ -103,8 +131,31 @@ function p2wpkh () {
 
 }
 
-function p2sh () {
+// <redeemScriptSig> {redeemScript}
+// OP_HASH160 {hash160 redeemScript} OP_EQUAL
+function p2sh (a) {
+  typef({
+    address: typef.maybe(typef.String),
+    hash: typef.maybe(typef.BufferN(20)),
+    redeem: typef.maybe(typef.Object),
+    input: typef.maybe(typef.Buffer),
+    network: typef.maybe(typef.Object),
+    output: typef.maybe(typef.BufferN(25))
+  }, a)
 
+  let network = a.network || bnetworks.bitcoin
+  let address = a.address
+  if (address) {
+    let decode = baddress.fromBase58Check(address)
+    if (network && network.pubKeyHash !== decode.version) throw new TypeError('Network mismatch')
+
+    if (hash && !hash.equals(decode.hash)) throw new TypeError('Hash mismatch')
+    if (!hash) hash = decode.hash
+  }
+
+  let result = {}
+  if (address) result.address = address
+  return result
 }
 
 function p2wsh () {
