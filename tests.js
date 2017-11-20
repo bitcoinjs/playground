@@ -33,6 +33,13 @@ tape('derives everything', (t) => {
   t.ok(hasEverything(p2pkh({ input: result1.input })))
 })
 
+tape('throws with not enough data', (t) => {
+  t.plan(1)
+  t.throws(() => {
+    p2pkh({})
+  }, /Not enough data/)
+})
+
 tape('derives output only', (t) => {
   function hasSome (a) {
     return typef({

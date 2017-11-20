@@ -116,12 +116,8 @@ function p2pkh (a) {
     ])
   }
 
-  let result = {}
-  if (address) result.address = address
-  if (hash) result.hash = hash
+  let result = { address, hash, network, output }
   if (input) result.input = input
-  if (network) result.network = network
-  if (output) result.output = output
   if (pubkey) result.pubkey = pubkey
   if (signature) result.signature = signature
   return result
