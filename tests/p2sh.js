@@ -3,7 +3,7 @@ let {
 } = require('bitcoinjs-lib')
 let tape = require('tape')
 let typef = require('typeforce')
-let { p2pkh, p2wpkh, p2sh } = require('../scripts')
+let { p2pkh, p2wpkh, p2wsh, p2sh } = require('../scripts')
 
 tape('throws with not enough data', (t) => {
   t.plan(1)
@@ -71,5 +71,9 @@ tape('derives everything', (t) => {
   t.same(result2.witness.length, 2)
   t.same(result2.witness[0].toString('hex'), '304402203f016fdb065b990a23f6b5735e2ef848e587861f620500ce35a2289da08a8c2802204ab76634cb4ca9646908941690272ce4115d54e78e0584008ec90f624c3cdd2301')
   t.same(result2.witness[1].toString('hex'), '03e15819590382a9dd878f01e2f0cbce541564eb415e43b440472d883ecd283058')
+
+  let result3 = p2wsh({ redeem: p2pkh({ pubkey }) })
+  console.log(result3)
+
   t.end()
 })

@@ -20,8 +20,8 @@ function toBase58Check (hash, version) {
 
 function fromBase58Check (address) {
   let payload = bs58check.decode(address)
-  if (payload.length < 21) throw new TypeError(address + ' is too short') // TODO: superfluous?
-  if (payload.length > 21) throw new TypeError(address + ' is too long') // TODO: superfluous?
+  if (payload.length < 21) throw new TypeError(address + ' is too short') // TODO: move to actual script types?
+  if (payload.length > 21) throw new TypeError(address + ' is too long') // ... and this too?
 
   let version = payload.readUInt8(0)
   let hash = payload.slice(1)
@@ -52,7 +52,7 @@ function p2pk () {
 }
 
 // input: {signature} {pubkey}
-// output: OP_DUP OP_HASH160 {pubKeyHash} OP_EQUALVERIFY OP_CHECKSIG
+// output: OP_DUP OP_HASH160 {hash160(pubkey)} OP_EQUALVERIFY OP_CHECKSIG
 function p2pkh (a) {
   typef({
     address: typef.maybe(typef.String),
@@ -202,7 +202,7 @@ function p2wpkh (a) {
     let decode = fromBech32(address)
     if (network && network.bech32 !== decode.prefix) throw new TypeError('Network mismatch')
     if (decode.version !== 0x00) throw new TypeError('Invalid version')
-    if (decode.data.length !== 20) throw new TypeError('Invalid data') // TODO: superfluous?
+    if (decode.data.length !== 20) throw new TypeError('Invalid data')
 
     if (hash && !hash.equals(decode.data)) throw new TypeError('Hash mismatch')
     if (!hash) hash = decode.data
@@ -240,9 +240,19 @@ function p2wpkh (a) {
   return result
 }
 
-// input: <redeemScriptSig> {redeemScript}
+function stacksEqual (a, b) {
+  if (a.length !== b.length) return false
+
+  for (let i = 0; i < a.length; ++i) {
+    if (!a.equals(b)) return false
+  }
+
+  return true
+}
+
+// input: [redeemScriptSig ...] {redeemScript}
 // witness: <?>
-// output: OP_HASH160 {hash160 redeemScript} OP_EQUAL
+// output: OP_HASH160 {hash160(redeemScript)} OP_EQUAL
 function p2sh (a) {
   typef({
     address: typef.maybe(typef.String),
@@ -253,7 +263,8 @@ function p2sh (a) {
     redeem: typef.maybe({
       input: typef.maybe(typef.Buffer),
       network: typef.Object,
-      output: typef.Buffer
+      output: typef.Buffer,
+      witness: typef.maybe(typef.arrayOf(typef.Buffer))
     }),
     witness: typef.maybe(typef.arrayOf(typef.Buffer))
   }, a)
@@ -276,6 +287,10 @@ function p2sh (a) {
     if (!redeem.output) redeem = Object.assign({}, redeem, { output: redeemOutput })
   }
 
+  if (witness) {
+    if (redeem && redeem.witness && witness && !stacksEqual(redeem.witness, witness)) throw new TypeError('Witness and redeem.witness mismatch')
+  }
+
   let hash = a.hash
   let network = a.network
   if (redeem) {
@@ -291,7 +306,7 @@ function p2sh (a) {
     if (!hash) hash = redeemOutputHash
 
     if (redeem.input) {
-      if (redeem.input.length === 0 && !redeem.witness) throw new TypeError('Missing witness')
+      if (redeem.input.length === 0 && !redeem.witness) throw new TypeError('Redeem.input is invalid')
       if (redeem.input.length !== 0 && redeem.witness) throw new TypeError('Unexpected witness')
 
       if (!witness && redeem.witness) witness = redeem.witness
@@ -347,8 +362,105 @@ function p2sh (a) {
   return result
 }
 
-function p2wsh () {
+// input: <>
+// witness: [redeemScriptSig ...] {redeemScript}
+// output: OP_0 {hash160(redeemScript)}
+function p2wsh (a) {
+  typef({
+    address: typef.maybe(typef.String),
+    hash: typef.maybe(typef.BufferN(32)),
+    input: typef.maybe(typef.BufferN(0)),
+    network: typef.maybe(typef.Object),
+    output: typef.maybe(typef.BufferN(34)),
+    redeem: typef.maybe({
+      input: typef.maybe(typef.Buffer),
+      network: typef.Object,
+      output: typef.Buffer,
+      witness: typef.maybe(typef.arrayOf(typef.Buffer))
+    }),
+    witness: typef.maybe(typef.arrayOf(typef.Buffer))
+  }, a)
 
+  let input = a.input
+  let redeem = a.redeem
+  let witness = a.witness
+
+  let hash = a.hash
+  let network = a.network
+  if (redeem) {
+    if (network && network !== redeem.network) throw new TypeError('Network mismatch')
+    if (!network) network = redeem.network
+
+    // is redeemScript a valid script?
+    let redeemOutputChunks = bscript.decompile(redeem.output)
+    if (redeemOutputChunks.length === 0) throw new TypeError('Redeem.output is invalid')
+
+    let redeemOutputHash = bcrypto.sha256(redeem.output)
+    if (hash && !hash.equals(redeemOutputHash)) throw new TypeError('Hash mismatch')
+    if (!hash) hash = redeemOutputHash
+
+    if (redeem.input && redeem.witness) throw new TypeError('Ambiguous')
+
+    // if no witness is provided, but an `.input` exists, decompile it and use it as the witness
+    if (redeem.input) {
+      let stack = bscript.decompile(redeem.input)
+      if (!bscript.isPushOnly(stack)) throw new TypeError('Non push-only witness')
+      if (witness && !stacksEqual(stack, witness)) throw new TypeError('Witness mismatch')
+      if (!witness) witness = stack
+
+    // otherwise, use the witness if it is available
+    } else if (redeem.witness) {
+      if (witness && !stacksEqual(redeem.witness, witness)) throw new TypeError('Witness mismatch')
+      if (!witness) witness = redeem.witness
+    }
+
+    if (!input) input = Buffer.alloc(0)
+  }
+
+  // default as late as possible
+  network = network || bnetworks.bitcoin
+
+  let address = a.address
+  if (address) {
+    let decode = fromBech32(address)
+    if (network && network.bech32 !== decode.prefix) throw new TypeError('Network mismatch')
+    if (decode.version !== 0x00) throw new TypeError('Invalid version')
+    if (decode.data.length !== 32) throw new TypeError('Invalid data')
+
+    if (hash && !hash.equals(decode.data)) throw new TypeError('Hash mismatch')
+    if (!hash) hash = decode.data
+  }
+
+  let output = a.output
+  if (output) {
+    if (
+      output.length !== 23 ||
+      output[0] !== OPS.OP_HASH160 ||
+      output[1] !== 0x14 ||
+      output[22] !== OPS.OP_EQUAL) throw new TypeError('Output is invalid')
+
+    let scriptHash = output.slice(1, 21)
+    if (hash && !hash.equals(scriptHash)) throw new TypeError('Hash mismatch')
+    if (!hash) hash = scriptHash
+  }
+
+  if (!hash) throw new TypeError('Not enough data')
+  if (!address) {
+    address = toBech32(hash, 0x00, network.bech32)
+  }
+
+  if (!output) {
+    output = bscript.compile([
+      OPS.OP_0,
+      hash
+    ])
+  }
+
+  let result = { address, hash, network, output }
+  if (input) result.input = input
+  if (redeem) result.redeem = redeem
+  if (witness) result.witness = witness
+  return result
 }
 
 function p2ms () {
