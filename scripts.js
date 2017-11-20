@@ -133,14 +133,55 @@ function p2sh (a) {
   typef({
     address: typef.maybe(typef.String),
     hash: typef.maybe(typef.BufferN(20)),
-    redeem: typef.maybe(typef.Object),
     input: typef.maybe(typef.Buffer),
     network: typef.maybe(typef.Object),
-    output: typef.maybe(typef.BufferN(25))
+    output: typef.maybe(typef.BufferN(23)),
+    redeem: typef.maybe({
+      input: typef.maybe(typef.Buffer),
+      network: typef.Object,
+      output: typef.Buffer
+    })
   }, a)
 
+  let input = a.input
+  let redeem = a.redeem
+
+  if (input) {
+    let chunks = bscript.decompile(input)
+    if (chunks.length < 1) throw new TypeError('Input too short')
+
+    let redeemOutput = chunks[chunks.length - 1]
+    if (!Buffer.isBuffer(redeemOutput)) throw new TypeError('Input is invalid')
+
+    let redeemInput = bscript.compile(chunks.slice(0, -1))
+    if (redeem && redeem.input && !redeem.input.equals(redeemInput)) throw new TypeError('Input and redeem.input mismatch')
+    if (redeem && !redeem.output.equals(redeemOutput)) throw new TypeError('Input and redeem.output mismatch')
+    if (!redeem || !redeem.input) redeem = Object.assign({}, redeem, { input: redeemInput })
+    if (!redeem.output) redeem = Object.assign({}, redeem, { output: redeemOutput })
+  }
+
   let hash = a.hash
-  let network = a.network || bnetworks.bitcoin
+  let network = a.network
+  if (redeem) {
+    if (network && network !== redeem.network) throw new TypeError('Network mismatch')
+    if (!network) network = redeem.network
+    if (redeem.input) {
+      let redeemInputChunks = bscript.decompile(redeem.input)
+      if (!bscript.isPushOnly(redeemInputChunks)) throw new TypeError('Non push-only scriptSig')
+    }
+
+    // is redeemScript a valid script?
+    let redeemOutputChunks = bscript.decompile(redeem.output)
+    if (redeemOutputChunks.length === 0) throw new TypeError('Redeem.output is invalid')
+
+    let redeemOutputHash = bcrypto.hash160(redeem.output)
+    if (hash && !hash.equals(redeemOutputHash)) throw new TypeError('Hash mismatch')
+    if (!hash) hash = redeemOutputHash
+  }
+
+  // default as late as possible
+  network = network || bnetworks.bitcoin
+
   let address = a.address
   if (address) {
     let decode = fromBase58Check(address)
@@ -158,7 +199,7 @@ function p2sh (a) {
       output[1] !== 0x14 ||
       output[22] !== OPS.OP_EQUAL) throw new TypeError('Output is invalid')
 
-    let scriptHash = output.slice(1, 22)
+    let scriptHash = output.slice(1, 21)
     if (hash && !hash.equals(scriptHash)) throw new TypeError('Hash mismatch')
     if (!hash) hash = scriptHash
   }
@@ -177,6 +218,8 @@ function p2sh (a) {
   }
 
   let result = { address, hash, network, output }
+  if (input) result.input = input
+  if (redeem) result.redeem = redeem
   return result
 }
 
