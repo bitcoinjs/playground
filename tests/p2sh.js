@@ -64,6 +64,19 @@ tape('derives everything', (t) => {
   t.same(result1.redeem.pubkey.toString('hex'), '03e15819590382a9dd878f01e2f0cbce541564eb415e43b440472d883ecd283058')
   t.same(result1.witness, undefined)
 
+  let result1b = p2sh({
+    address: '3GETYP4cuSesh2zsPEEYVZqnRedwe4FwUT',
+    input: result1.input
+  })
+
+  // derives everything relevant
+  t.same(result1.input, result1b.input)
+  t.same(result1.output, result1b.output)
+  t.same(result1.redeem.input, result1b.redeem.input) // hmmmm
+  t.same(result1.redeem.output, result1b.redeem.output) // hmmmm
+  t.same(result1.redeem.witness, result1b.redeem.witness) // hmmmm
+  t.same(result1.witness, result1b.witness)
+
   let result2 = p2sh({ redeem: p2wpkh({ pubkey, signature }) })
   t.same(result2.address, '325CuTNSYmvurXaBmhNFer5zDkKnDXZggu')
   t.same(result2.redeem.address, 'bc1qcv905k9wqeemqzj9khqhml6xxduq79qqy745vn')
@@ -73,6 +86,19 @@ tape('derives everything', (t) => {
   t.same(result2.witness.length, 2)
   t.same(result2.witness[0].toString('hex'), '304402203f016fdb065b990a23f6b5735e2ef848e587861f620500ce35a2289da08a8c2802204ab76634cb4ca9646908941690272ce4115d54e78e0584008ec90f624c3cdd2301')
   t.same(result2.witness[1].toString('hex'), '03e15819590382a9dd878f01e2f0cbce541564eb415e43b440472d883ecd283058')
+
+  let result2b = p2sh({
+    address: '325CuTNSYmvurXaBmhNFer5zDkKnDXZggu',
+    witness: result2.witness
+  })
+
+  // derives everything relevant
+  t.same(result2.input, result2b.input)
+  t.same(result2.output, result2b.output)
+  t.same(result2.redeem.input, result2b.redeem.input) // TODO // hmmmm
+  t.same(result2.redeem.output, result2b.redeem.output) // TODO // hmmmm
+  t.same(result2.redeem.witness, result2b.redeem.witness) // TODO // hmmmm
+  t.same(result2.witness, result2b.witness)
 
   let result3 = p2wsh({ redeem: p2pkh({ pubkey, signature }) })
   t.same(result3.address, 'bc1qusxlgq9quu27ucxs7a2fg8nv0pycdzvxsjk9npyupupxw3y892ss2cq5ar')
@@ -93,6 +119,12 @@ tape('derives everything', (t) => {
   t.same(result4.witness.length, 2)
   t.same(result4.witness[0].toString('hex'), '304402203f016fdb065b990a23f6b5735e2ef848e587861f620500ce35a2289da08a8c2802204ab76634cb4ca9646908941690272ce4115d54e78e0584008ec90f624c3cdd2301')
   t.same(result4.witness[1].toString('hex'), '03e15819590382a9dd878f01e2f0cbce541564eb415e43b440472d883ecd283058')
+
+  let result5 = p2wsh({
+    address: 'bc1qpsl7el8wcx22f3fpdt3lm2wmzug7yyx2q3n8wzgtf37kps9tqy7skc7m3e',
+    witness: result4.witness
+  })
+  console.log(result5)
 
   t.end()
 })
