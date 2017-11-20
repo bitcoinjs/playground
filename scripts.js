@@ -101,7 +101,7 @@ function p2pkh (a) {
     if (!hash) hash = pubKeyHash
   }
 
-  // non-essential derivations
+  if (!hash) throw new TypeError('Not enough data')
   if (!address) {
     address = toBase58Check(hash, network.pubKeyHash)
   }
