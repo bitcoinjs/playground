@@ -5,15 +5,7 @@ let {
 } = require('bitcoinjs-lib')
 let tape = require('tape')
 let typef = require('typeforce')
-let { p2pk, p2pkh, p2wpkh, p2sh, p2wsh, p2ms } = require('./scripts')
-
-let keyPair = ECPair.makeRandom()
-let pubkey = keyPair.getPublicKeyBuffer()
-let signature = keyPair.sign(Buffer.alloc(32)).toScriptSignature(0x01)
-
-let result1 = p2pkh({ pubkey, signature })
-let result2 = p2pkh({ pubkey })
-let result3 = p2sh({ redeem: p2pkh({ pubkey }) })
+let { p2pkh } = require('../scripts')
 
 tape('derives everything', (t) => {
   function hasEverything (a) {
@@ -28,16 +20,14 @@ tape('derives everything', (t) => {
     }, a)
   }
 
+  let keyPair = ECPair.makeRandom()
+  let pubkey = keyPair.getPublicKeyBuffer()
+  let signature = keyPair.sign(Buffer.alloc(32)).toScriptSignature(0x01)
+  let result1 = p2pkh({ pubkey, signature })
+
   t.plan(2)
   t.ok(hasEverything(p2pkh({ pubkey, signature })))
   t.ok(hasEverything(p2pkh({ input: result1.input })))
-})
-
-tape('throws with not enough data', (t) => {
-  t.plan(1)
-  t.throws(() => {
-    p2pkh({})
-  }, /Not enough data/)
 })
 
 tape('derives output only', (t) => {
@@ -53,8 +43,19 @@ tape('derives output only', (t) => {
     }, a)
   }
 
+  let keyPair = ECPair.makeRandom()
+  let pubkey = keyPair.getPublicKeyBuffer()
+  let result2 = p2pkh({ pubkey })
+
   t.plan(3)
   t.ok(hasSome(p2pkh({ pubkey })))
   t.ok(hasSome(p2pkh({ hash: bcrypto.hash160(pubkey) })))
   t.ok(hasSome(p2pkh({ output: result2.output })))
+})
+
+tape('throws with not enough data', (t) => {
+  t.plan(1)
+  t.throws(() => {
+    p2pkh({})
+  }, /Not enough data/)
 })
