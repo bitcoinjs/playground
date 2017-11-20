@@ -10,7 +10,7 @@ let OPS = require('bitcoin-ops')
 function toBase58Check (hash, version) {
   typef(typef.tuple(typef.BufferN(20), typef.UInt8), arguments)
 
-  var payload = Buffer.allocUnsafe(21)
+  let payload = Buffer.allocUnsafe(21)
   payload.writeUInt8(version, 0)
   hash.copy(payload, 1)
 
@@ -18,12 +18,12 @@ function toBase58Check (hash, version) {
 }
 
 function fromBase58Check (address) {
-  var payload = bs58check.decode(address)
+  let payload = bs58check.decode(address)
   if (payload.length < 21) throw new TypeError(address + ' is too short')
   if (payload.length > 21) throw new TypeError(address + ' is too long')
 
-  var version = payload.readUInt8(0)
-  var hash = payload.slice(1)
+  let version = payload.readUInt8(0)
+  let hash = payload.slice(1)
 
   return { version: version, hash: hash }
 }
@@ -139,18 +139,44 @@ function p2sh (a) {
     output: typef.maybe(typef.BufferN(25))
   }, a)
 
+  let hash = a.hash
   let network = a.network || bnetworks.bitcoin
   let address = a.address
   if (address) {
-    let decode = baddress.fromBase58Check(address)
-    if (network && network.pubKeyHash !== decode.version) throw new TypeError('Network mismatch')
+    let decode = fromBase58Check(address)
+    if (network && network.scriptHash !== decode.version) throw new TypeError('Network mismatch')
 
     if (hash && !hash.equals(decode.hash)) throw new TypeError('Hash mismatch')
     if (!hash) hash = decode.hash
   }
 
-  let result = {}
-  if (address) result.address = address
+  let output = a.output
+  if (output) {
+    if (
+      output.length !== 23 ||
+      output[0] !== OPS.OP_HASH160 ||
+      output[1] !== 0x14 ||
+      output[22] !== OPS.OP_EQUAL) throw new TypeError('Output is invalid')
+
+    let scriptHash = output.slice(1, 22)
+    if (hash && !hash.equals(scriptHash)) throw new TypeError('Hash mismatch')
+    if (!hash) hash = scriptHash
+  }
+
+  if (!hash) throw new TypeError('Not enough data')
+  if (!address) {
+    address = toBase58Check(hash, network.scriptHash)
+  }
+
+  if (!output) {
+    output = bscript.compile([
+      OPS.OP_HASH160,
+      hash,
+      OPS.OP_EQUAL
+    ])
+  }
+
+  let result = { address, hash, network, output }
   return result
 }
 
