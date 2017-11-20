@@ -399,19 +399,22 @@ function p2wsh (a) {
     if (hash && !hash.equals(redeemOutputHash)) throw new TypeError('Hash mismatch')
     if (!hash) hash = redeemOutputHash
 
-    if (redeem.input && redeem.witness) throw new TypeError('Ambiguous')
+    if (
+      redeem.input &&
+      redeem.input.length > 0 &&
+      redeem.witness) throw new TypeError('Ambiguous')
 
-    // if no witness is provided, but an `.input` exists, decompile it and use it as the witness
-    if (redeem.input) {
+    // use the witness if available
+    if (redeem.witness) {
+      if (witness && !stacksEqual(redeem.witness, witness)) throw new TypeError('Witness mismatch')
+      if (!witness) witness = redeem.witness
+
+    // otherwise, if an `.input` exists, decompile it and use it as the witness
+    } else if (redeem.input && redeem.input.length > 0) {
       let stack = bscript.decompile(redeem.input)
       if (!bscript.isPushOnly(stack)) throw new TypeError('Non push-only witness')
       if (witness && !stacksEqual(stack, witness)) throw new TypeError('Witness mismatch')
       if (!witness) witness = stack
-
-    // otherwise, use the witness if it is available
-    } else if (redeem.witness) {
-      if (witness && !stacksEqual(redeem.witness, witness)) throw new TypeError('Witness mismatch')
-      if (!witness) witness = redeem.witness
     }
 
     if (!input) input = Buffer.alloc(0)
