@@ -7,6 +7,7 @@ var bech32 = require('bech32')
 let bs58check = require('bs58check')
 let typef = require('typeforce')
 let OPS = require('bitcoin-ops')
+var OP_INT_BASE = OPS.OP_RESERVED // OP_1 - 1
 
 function toBase58Check (hash, version) {
   typef(typef.tuple(typef.BufferN(20), typef.UInt8), arguments)
@@ -60,7 +61,77 @@ function stacksEqual (a, b) {
 // input: OP_0 [signatures ...]
 // output: m [pubKeys ...] n OP_CHECKMULTISIG
 function p2ms (a) {
+  typef({
+    input: typef.maybe(typef.Buffer),
+    m: typef.maybe(typef.Number),
+    n: typef.maybe(typef.Number),
+    network: typef.maybe(typef.Object),
+    output: typef.maybe(typef.BufferN(25)),
+    pubkeys: typef.maybe(typef.arrayOf(bscript.isCanonicalPubKey)),
+    signatures: typef.maybe(typef.arrayOf(bscript.isCanonicalSignature))
+  }, a)
 
+  let input = a.input
+  let signatures = a.signatures
+
+  if (signatures) {
+    let script = bscript.compile([OPS.OP_0].concat(signatures))
+    if (input && !input.equals(script)) throw new TypeError('Input mismatch')
+    if (!input) input = script
+
+  // use input for data
+  } else if (input) {
+    let chunks = bscript.decompile(input)
+    let signatureChunks = chunks.slice(1)
+
+    if (chunks.length < 2 ||
+      chunks[0] !== OPS.OP_0 ||
+      signatureChunks.every(bscript.isCanonicalSignature)) throw new TypeError('Input is invalid')
+
+    if (signatures && !stacksEqual(signatures, signatureChunks)) throw new TypeError('Signatures mismatch')
+    if (!signatures) signatures = signatureChunks
+  }
+
+  let network = a.network || bnetworks.bitcoin
+  let output = a.output
+  let pubkeys = a.pubkeys
+
+  if (output) {
+    let chunks = bscript.decompile(output)
+    if (chunks[chunks.length - 1] !== OPS.CHECKMULTISIG) throw new TypeError('Output is invalid')
+    if (!typef.Number(chunks[0])) throw new TypeError('Output is invalid')
+    if (!typef.Number(chunks[chunks.length - 2])) throw new TypeError('Output is invalid')
+
+    let m = chunks[0] - OP_INT_BASE
+    let n = chunks[chunks.length - 2] - OP_INT_BASE
+    if (
+      m <= 0 ||
+      n > 16 ||
+      m > n ||
+      n !== chunks.length - 3) throw new TypeError('Output is invalid')
+
+    let outputPubKeys = chunks.slice(1, -2)
+    if (pubkeys && !stacksEqual(pubkeys, outputPubKeys)) throw new TypeError('PubKeys mismatch')
+    if (!pubkeys) pubkeys = outputPubKeys
+  }
+
+  if (!pubkeys) throw new TypeError('Not enough data')
+
+  let m = a.m
+  let n = a.n
+  if (!output) {
+    output = bscript.compile([].concat(
+      OP_INT_BASE + m,
+      pubkeys,
+      OP_INT_BASE + n,
+      OPS.OP_CHECKMULTISIG
+    ))
+  }
+
+  let result = { network, output, pubkeys }
+  if (input) result.input = input
+  if (signatures) result.signature = signatures
+  return result
 }
 
 // input: {signature}
