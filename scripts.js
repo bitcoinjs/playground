@@ -47,6 +47,20 @@ function fromBech32 (address) {
   }
 }
 
+function stacksEqual (a, b) {
+  if (a.length !== b.length) return false
+
+  for (let i = 0; i < a.length; ++i) {
+    if (!a[i].equals(b[i])) return false
+  }
+
+  return true
+}
+
+function p2ms () {
+
+}
+
 function p2pk () {
 
 }
@@ -238,16 +252,6 @@ function p2wpkh (a) {
   if (signature) result.signature = signature
   if (witness) result.witness = witness
   return result
-}
-
-function stacksEqual (a, b) {
-  if (a.length !== b.length) return false
-
-  for (let i = 0; i < a.length; ++i) {
-    if (!a[i].equals(b[i])) return false
-  }
-
-  return true
 }
 
 // input: [redeemScriptSig ...] {redeemScript}
@@ -476,10 +480,6 @@ function p2wsh (a) {
   return result
 }
 
-function p2ms () {
-
-}
-
 module.exports = {
-  p2pk, p2pkh, p2wpkh, p2sh, p2wsh, p2ms
+  p2ms, p2pk, p2pkh, p2wpkh, p2sh, p2wsh
 }
