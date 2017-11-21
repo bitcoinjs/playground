@@ -244,7 +244,7 @@ function stacksEqual (a, b) {
   if (a.length !== b.length) return false
 
   for (let i = 0; i < a.length; ++i) {
-    if (!a.equals(b)) return false
+    if (!a[i].equals(b[i])) return false
   }
 
   return true
@@ -283,8 +283,8 @@ function p2sh (a) {
     let redeemInput = bscript.compile(chunks.slice(0, -1))
     if (redeem && redeem.input && !redeem.input.equals(redeemInput)) throw new TypeError('Input and redeem.input mismatch')
     if (redeem && !redeem.output.equals(redeemOutput)) throw new TypeError('Input and redeem.output mismatch')
-    if (!redeem || !redeem.input) redeem = Object.assign({}, redeem, { input: redeemInput })
-    if (!redeem.output) redeem = Object.assign({}, redeem, { output: redeemOutput })
+    if (!redeem || !redeem.input) redeem = Object.assign({ input: redeemInput }, redeem)
+    if (!redeem.output) redeem = Object.assign({ output: redeemOutput }, redeem)
   }
 
   if (witness) {
@@ -298,8 +298,7 @@ function p2sh (a) {
     if (!network) network = redeem.network
 
     // is redeemScript a valid script?
-    let redeemOutputChunks = bscript.decompile(redeem.output)
-    if (redeemOutputChunks.length === 0) throw new TypeError('Redeem.output is invalid')
+    if (bscript.decompile(redeem.output).length === 0) throw new TypeError('Redeem.output is invalid')
 
     let redeemOutputHash = bcrypto.hash160(redeem.output)
     if (hash && !hash.equals(redeemOutputHash)) throw new TypeError('Hash mismatch')
@@ -385,36 +384,47 @@ function p2wsh (a) {
   let redeem = a.redeem
   let witness = a.witness
 
+  if (witness) {
+    if (!bscript.isPushOnly(witness)) throw new TypeError('Non push-only witness')
+
+    let redeemOutput = witness[witness.length - 1]
+    let redeemWitness = witness.slice(0, -1)
+
+    if (redeem && redeem.witness && !stacksEqual(redeem.witness, redeemWitness)) throw new TypeError('Witness and redeem.witness mismatch')
+    if (redeem && redeem.output && redeem.output.equals(redeemOutput)) throw new TypeError('Witness and redeem.output mismatch')
+    if (!redeem || !redeem.witness) redeem = Object.assign({ witness: redeemWitness }, redeem)
+    if (!redeem.output) redeem = Object.assign({ output: redeemOutput }, redeem)
+  }
+
   let hash = a.hash
   let network = a.network
   if (redeem) {
     if (network && network !== redeem.network) throw new TypeError('Network mismatch')
     if (!network) network = redeem.network
 
-    // is redeemScript a valid script?
-    let redeemOutputChunks = bscript.decompile(redeem.output)
-    if (redeemOutputChunks.length === 0) throw new TypeError('Redeem.output is invalid')
-
     let redeemOutputHash = bcrypto.sha256(redeem.output)
     if (hash && !hash.equals(redeemOutputHash)) throw new TypeError('Hash mismatch')
     if (!hash) hash = redeemOutputHash
 
+    // is redeemScript a valid script?
+    if (bscript.decompile(redeem.output).length === 0) throw new TypeError('Redeem.output is invalid')
+
     if (
       redeem.input &&
       redeem.input.length > 0 &&
-      redeem.witness) throw new TypeError('Ambiguous')
+      redeem.witness) throw new TypeError('Ambiguous witness source')
 
-    // use the witness if available
-    if (redeem.witness) {
-      if (witness && !stacksEqual(redeem.witness, witness)) throw new TypeError('Witness mismatch')
-      if (!witness) witness = redeem.witness
+    // try to use provided redeem witness
+    let redeemWitness = redeem.witness
+    if (!redeemWitness && redeem.input && redeem.input.length > 0) {
+      redeemWitness = bscript.decompile(redeem.input)
+      if (!bscript.isPushOnly(redeemWitness)) throw new TypeError('Non push-only witness')
+    }
 
-    // otherwise, if an `.input` exists, decompile it and use it as the witness
-    } else if (redeem.input && redeem.input.length > 0) {
-      let stack = bscript.decompile(redeem.input)
-      if (!bscript.isPushOnly(stack)) throw new TypeError('Non push-only witness')
-      if (witness && !stacksEqual(stack, witness)) throw new TypeError('Witness mismatch')
-      if (!witness) witness = stack
+    if (redeemWitness) {
+      let derivedWitness = [].concat(redeemWitness, redeem.output)
+      if (witness && !stacksEqual(witness, derivedWitness)) throw new TypeError('Witness mismatch')
+      if (!witness) witness = derivedWitness
     }
 
     if (!input) input = Buffer.alloc(0)
