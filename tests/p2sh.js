@@ -71,9 +71,9 @@ tape('derives everything', (t) => {
   t.same(result1.address, result1b.address)
   t.same(result1.input, result1b.input)
   t.same(result1.output, result1b.output)
-  t.same(result1.redeem.input, result1b.redeem.input) // hmmmm
-  t.same(result1.redeem.output, result1b.redeem.output) // hmmmm
-  t.same(result1.redeem.witness, result1b.redeem.witness) // hmmmm
+  t.same(result1.redeem.input, result1b.redeem.input)
+  t.same(result1.redeem.output, result1b.redeem.output)
+  t.same(result1.redeem.witness, result1b.redeem.witness)
   t.same(result1.witness, result1b.witness)
 
   let result2 = p2sh({ redeem: p2wpkh({ pubkey, signature }) })
