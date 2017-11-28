@@ -111,6 +111,7 @@ function p2ms (a) {
       n !== chunks.length - 3) throw new TypeError('Output is invalid')
 
     let outputPubKeys = chunks.slice(1, -2)
+    if (!outputPubKeys.every(x => bscript.isCanonicalPubKey(x))) throw new TypeError('Output is invalid')
     if (pubkeys && !stacksEqual(pubkeys, outputPubKeys)) throw new TypeError('PubKeys mismatch')
     if (!pubkeys) pubkeys = outputPubKeys
   }
@@ -118,7 +119,10 @@ function p2ms (a) {
   if (!pubkeys) throw new TypeError('Not enough data')
 
   let m = a.m
-  let n = a.n
+  let n = a.n || pubkeys.length
+  if (n !== pubkeys.length) throw new TypeError('n PubKeys mismatch')
+  if (n < m) throw new TypeError('Not enough pubKeys provided')
+
   if (!output) {
     output = bscript.compile([].concat(
       OP_INT_BASE + m,
