@@ -7,7 +7,8 @@ var bech32 = require('bech32')
 let bs58check = require('bs58check')
 let typef = require('typeforce')
 let OPS = require('bitcoin-ops')
-var OP_INT_BASE = OPS.OP_RESERVED // OP_1 - 1
+let OP_INT_BASE = OPS.OP_RESERVED // OP_1 - 1
+let EMPTY_BUFFER = Buffer.alloc(0)
 
 function toBase58Check (hash, version) {
   typef(typef.tuple(typef.BufferN(20), typef.UInt8), arguments)
@@ -316,7 +317,7 @@ function p2wpkh (a) {
       !witness[0].equals(signature) ||
       !witness[1].equals(pubkey)
     )) throw new TypeError('Witness mismatch')
-    if (!input) input = Buffer.alloc(0)
+    if (!input) input = EMPTY_BUFFER
     if (!witness) witness = [signature, pubkey]
 
   // use witness for data
@@ -331,7 +332,7 @@ function p2wpkh (a) {
     if (pubkey && !pubkey.equals(witness[1])) throw new TypeError('Pubkey mismatch')
     if (!pubkey) pubkey = witness[1]
 
-    if (!input) input = Buffer.alloc(0)
+    if (!input) input = EMPTY_BUFFER
   }
 
   if (!witness && input) throw new TypeError('Missing Witness')
@@ -552,13 +553,15 @@ function p2wsh (a) {
       redeem.input.length > 0 &&
       redeem.witness) throw new TypeError('Ambiguous witness source')
 
-    // try to use provided redeem witness
+    // attempt to transform redeem input to witness stack
     let redeemWitness = redeem.witness
     if (!redeemWitness && redeem.input && redeem.input.length > 0) {
       redeemWitness = bscript.decompile(redeem.input)
       if (!bscript.isPushOnly(redeemWitness)) throw new TypeError('Non push-only witness')
 
       redeemWitness = bscript.toStack(redeemWitness)
+      redeem = Object.assign({ witness: redeemWitness }, redeem)
+      delete redeem.input // delete the input, as the redeem in isolation isn't "valid" for encoding
     }
 
     if (redeemWitness) {
@@ -567,7 +570,7 @@ function p2wsh (a) {
       if (!witness) witness = derivedWitness
     }
 
-    if (!input) input = Buffer.alloc(0)
+    if (!input) input = EMPTY_BUFFER
   }
 
   // default as late as possible
