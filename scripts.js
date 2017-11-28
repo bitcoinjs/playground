@@ -96,19 +96,26 @@ function p2ms (a) {
   let output = a.output
   let pubkeys = a.pubkeys
 
+  let m = a.m
+  let n = a.n
   if (output) {
     let chunks = bscript.decompile(output)
     if (chunks[chunks.length - 1] !== OPS.CHECKMULTISIG) throw new TypeError('Output is invalid')
     if (!typef.Number(chunks[0])) throw new TypeError('Output is invalid')
     if (!typef.Number(chunks[chunks.length - 2])) throw new TypeError('Output is invalid')
 
-    let m = chunks[0] - OP_INT_BASE
-    let n = chunks[chunks.length - 2] - OP_INT_BASE
+    let om = chunks[0] - OP_INT_BASE
+    let on = chunks[chunks.length - 2] - OP_INT_BASE
     if (
-      m <= 0 ||
-      n > 16 ||
-      m > n ||
-      n !== chunks.length - 3) throw new TypeError('Output is invalid')
+      om <= 0 ||
+      on > 16 ||
+      om > on ||
+      on !== chunks.length - 3) throw new TypeError('Output is invalid')
+
+    if (m !== undefined && m !== om) throw new TypeError('m mismatch')
+    if (n !== undefined && n !== on) throw new TypeError('n mismatch')
+    if (!m) m = om
+    if (!n) n = on
 
     let outputPubKeys = chunks.slice(1, -2)
     if (!outputPubKeys.every(x => bscript.isCanonicalPubKey(x))) throw new TypeError('Output is invalid')
@@ -116,10 +123,9 @@ function p2ms (a) {
     if (!pubkeys) pubkeys = outputPubKeys
   }
 
-  if (!pubkeys) throw new TypeError('Not enough data')
-
-  let m = a.m
-  let n = a.n || pubkeys.length
+  if (!pubkeys) throw new TypeError('Not enough data (missing pubkeys)')
+  if (!typef.Number(m)) throw new TypeError('Not enough data (missing m)')
+  n = n || pubkeys.length
   if (n !== pubkeys.length) throw new TypeError('n PubKeys mismatch')
   if (n < m) throw new TypeError('Not enough pubKeys provided')
 
@@ -132,7 +138,7 @@ function p2ms (a) {
     ))
   }
 
-  let result = { network, output, pubkeys }
+  let result = { m, n, network, output, pubkeys }
   if (input) result.input = input
   if (signatures) result.signature = signatures
   return result

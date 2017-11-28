@@ -3,7 +3,7 @@ let {
 } = require('bitcoinjs-lib')
 let tape = require('tape')
 let typef = require('typeforce')
-let { p2pkh, p2wpkh, p2wsh, p2sh } = require('../scripts')
+let { p2pkh, p2wpkh, p2wsh, p2sh, p2pk } = require('../scripts')
 let EMPTY_BUFFER = Buffer.alloc(0)
 
 tape('throws with not enough data', (t) => {
@@ -23,7 +23,6 @@ tape('derives output only', (t) => {
     }, a)
   }
 
-  t.plan(15)
   let hash = Buffer.alloc(20, 0x01)
   let result1 = p2sh({ hash })
   t.same(result1.address, '31nKoVLBc2BXUeKQKhnimyrt9DD12VwG6p')
@@ -49,7 +48,11 @@ tape('derives output only', (t) => {
   t.same(result3.redeem.output.toString('hex'), '0014c30afa58ae0673b00a45b5c17dff4633780f1400')
   t.same(result3.redeem.pubkey.toString('hex'), '03e15819590382a9dd878f01e2f0cbce541564eb415e43b440472d883ecd283058')
 
-//    let result4 = p2wsh({ redeem: p2pkh({ pubkey }) })
+  let result4 = p2wsh({ redeem: p2pk({ pubkey }) })
+  t.same(result4.address, 'bc1qqf0ysa4w6ltg32nchymdku787su2zryhgjdxxdmde88ml47n3zcqr6cl4k')
+  t.same(result4.redeem.output.toString('hex'), 'ac2103e15819590382a9dd878f01e2f0cbce541564eb415e43b440472d883ecd283058')
+  t.same(result4.redeem.pubkey.toString('hex'), '03e15819590382a9dd878f01e2f0cbce541564eb415e43b440472d883ecd283058')
+  t.end()
 })
 
 tape('derives everything', (t) => {
