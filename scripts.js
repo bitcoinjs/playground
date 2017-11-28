@@ -557,6 +557,8 @@ function p2wsh (a) {
     if (!redeemWitness && redeem.input && redeem.input.length > 0) {
       redeemWitness = bscript.decompile(redeem.input)
       if (!bscript.isPushOnly(redeemWitness)) throw new TypeError('Non push-only witness')
+
+      redeemWitness = bscript.toStack(redeemWitness)
     }
 
     if (redeemWitness) {
