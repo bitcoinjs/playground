@@ -62,6 +62,10 @@ function stacksEqual (a, b) {
 // input: OP_0 [signatures ...]
 // output: m [pubKeys ...] n OP_CHECKMULTISIG
 function p2ms (a) {
+  function isAcceptableSignature (x) {
+    return bscript.isCanonicalSignature(x) || (a.allowIncomplete && x === OPS.OP_0)
+  }
+
   typef({
     input: typef.maybe(typef.Buffer),
     m: typef.maybe(typef.Number),
@@ -69,7 +73,8 @@ function p2ms (a) {
     network: typef.maybe(typef.Object),
     output: typef.maybe(typef.BufferN(25)),
     pubkeys: typef.maybe(typef.arrayOf(bscript.isCanonicalPubKey)),
-    signatures: typef.maybe(typef.arrayOf(bscript.isCanonicalSignature))
+    signatures: typef.maybe(typef.arrayOf(isAcceptableSignature)),
+    allowIncomplete: typef.maybe(typef.Boolean)
   }, a)
 
   let input = a.input
@@ -87,7 +92,7 @@ function p2ms (a) {
 
     if (chunks.length < 2 ||
       chunks[0] !== OPS.OP_0 ||
-      signatureChunks.every(bscript.isCanonicalSignature)) throw new TypeError('Input is invalid')
+      signatureChunks.every(isAcceptableSignature)) throw new TypeError('Input is invalid')
 
     if (signatures && !stacksEqual(signatures, signatureChunks)) throw new TypeError('Signatures mismatch')
     if (!signatures) signatures = signatureChunks
