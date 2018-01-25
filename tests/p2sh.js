@@ -13,6 +13,30 @@ tape('throws with not enough data', (t) => {
   }, /Not enough data/)
 })
 
+tape('supports recursion, better or worse', (t) => {
+  let keyPair = ECPair.fromWIF('KxJknBSZjp9WwnrgkvfG1zpHtuEqRjcnsr9RFpxWnk2GNJbkGe42')
+  let pubkey = keyPair.getPublicKeyBuffer()
+  let signature = keyPair.sign(Buffer.alloc(32)).toScriptSignature(0x01)
+
+  let result1 = p2sh({ redeem: p2pkh({ pubkey, signature }) })
+  t.same(result1.address, '3GETYP4cuSesh2zsPEEYVZqnRedwe4FwUT')
+  t.same(result1.output.toString('hex'), 'a9149f840a5fc02407ef0ad499c2ec0eb0b942fb008687')
+  t.same(result1.redeem.address, '1JnHvAd2m9YqykjpF11a4y59hpt5KoqRmn')
+  t.same(result1.redeem.hash.toString('hex'), 'c30afa58ae0673b00a45b5c17dff4633780f1400')
+  t.same(result1.redeem.output.toString('hex'), '76a914c30afa58ae0673b00a45b5c17dff4633780f140088ac')
+  t.same(result1.redeem.pubkey.toString('hex'), '03e15819590382a9dd878f01e2f0cbce541564eb415e43b440472d883ecd283058')
+  t.same(result1.input.toString('hex'), '47304402203f016fdb065b990a23f6b5735e2ef848e587861f620500ce35a2289da08a8c2802204ab76634cb4ca9646908941690272ce4115d54e78e0584008ec90f624c3cdd23012103e15819590382a9dd878f01e2f0cbce541564eb415e43b440472d883ecd2830581976a914c30afa58ae0673b00a45b5c17dff4633780f140088ac')
+  t.same(result1.witness, undefined)
+
+  let result2 = p2sh({ redeem: result1 })
+  t.same(result2.address, '31vZNjEeCDbwAbgpXX5NV9H3exzKmMakn8')
+  t.same(result2.redeem.address, '3GETYP4cuSesh2zsPEEYVZqnRedwe4FwUT')
+  t.same(result2.input.toString('hex'), '47304402203f016fdb065b990a23f6b5735e2ef848e587861f620500ce35a2289da08a8c2802204ab76634cb4ca9646908941690272ce4115d54e78e0584008ec90f624c3cdd23012103e15819590382a9dd878f01e2f0cbce541564eb415e43b440472d883ecd2830581976a914c30afa58ae0673b00a45b5c17dff4633780f140088ac17a9149f840a5fc02407ef0ad499c2ec0eb0b942fb008687')
+  t.same(result2.witness, undefined)
+
+  t.end()
+})
+
 tape('derives output only', (t) => {
   function hasSome (a) {
     return typef({
@@ -66,18 +90,20 @@ tape('derives everything', (t) => {
   t.same(result1.redeem.hash.toString('hex'), 'c30afa58ae0673b00a45b5c17dff4633780f1400')
   t.same(result1.redeem.output.toString('hex'), '76a914c30afa58ae0673b00a45b5c17dff4633780f140088ac')
   t.same(result1.redeem.pubkey.toString('hex'), '03e15819590382a9dd878f01e2f0cbce541564eb415e43b440472d883ecd283058')
+  t.same(result1.input.toString('hex'), '47304402203f016fdb065b990a23f6b5735e2ef848e587861f620500ce35a2289da08a8c2802204ab76634cb4ca9646908941690272ce4115d54e78e0584008ec90f624c3cdd23012103e15819590382a9dd878f01e2f0cbce541564eb415e43b440472d883ecd2830581976a914c30afa58ae0673b00a45b5c17dff4633780f140088ac')
   t.same(result1.witness, undefined)
 
   let result1b = p2sh({ input: result1.input })
 
   // derives everything relevant
-  t.same(result1.address, result1b.address)
-  t.same(result1.input, result1b.input)
-  t.same(result1.output, result1b.output)
-  t.same(result1.redeem.input, result1b.redeem.input)
-  t.same(result1.redeem.output, result1b.redeem.output)
-  t.same(result1.redeem.witness, result1b.redeem.witness)
-  t.same(result1.witness, result1b.witness)
+  t.same(result1b.address, result1.address)
+  t.same(result1b.input, result1.input)
+  t.same(result1b.output, result1.output)
+  t.same(result1b.redeem.input, result1.redeem.input)
+  t.same(result1b.redeem.output, result1.redeem.output)
+  t.same(result1b.redeem.witness, result1.redeem.witness)
+  t.same(result1b.input, result1.input)
+  t.same(result1b.witness, result1.witness)
 
   let result2 = p2sh({ redeem: p2wpkh({ pubkey, signature }) })
   t.same(result2.address, '325CuTNSYmvurXaBmhNFer5zDkKnDXZggu')
