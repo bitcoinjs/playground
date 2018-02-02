@@ -167,5 +167,8 @@ tape('derives everything', (t) => {
   t.same(result4b.redeem.witness[1].toString('hex'), '03e15819590382a9dd878f01e2f0cbce541564eb415e43b440472d883ecd283058')
   t.same(result4b.witness, result4.witness)
 
+  let result5 = p2wsh({ output: result4b.output })
+  t.same(result5.address, 'bc1qpsl7el8wcx22f3fpdt3lm2wmzug7yyx2q3n8wzgtf37kps9tqy7skc7m3e')
+
   t.end()
 })

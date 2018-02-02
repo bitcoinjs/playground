@@ -3,7 +3,7 @@ let {
   networks: bnetworks,
   script: bscript
 } = require('bitcoinjs-lib')
-var bech32 = require('bech32')
+let bech32 = require('bech32')
 let bs58check = require('bs58check')
 let typef = require('typeforce')
 let OPS = require('bitcoin-ops')
@@ -11,39 +11,33 @@ let OP_INT_BASE = OPS.OP_RESERVED // OP_1 - 1
 let EMPTY_BUFFER = Buffer.alloc(0)
 
 function toBase58Check (hash, version) {
-  typef(typef.tuple(typef.BufferN(20), typef.UInt8), arguments)
-
-  let payload = Buffer.allocUnsafe(21)
+  typef(typef.tuple(typef.Buffer, typef.UInt8), arguments)
+  let payload = Buffer.allocUnsafe(1 + hash.length)
   payload.writeUInt8(version, 0)
   hash.copy(payload, 1)
-
   return bs58check.encode(payload)
 }
 
 function fromBase58Check (address) {
   let payload = bs58check.decode(address)
-  if (payload.length < 21) throw new TypeError(address + ' is too short') // TODO: move to actual script types?
-  if (payload.length > 21) throw new TypeError(address + ' is too long') // ... and this too?
-
   let version = payload.readUInt8(0)
   let hash = payload.slice(1)
-
-  return { version: version, hash: hash }
+  return { hash: hash, version: version }
 }
 
 function toBech32 (data, version, prefix) {
-  var words = bech32.toWords(data)
+  let words = bech32.toWords(data)
   words.unshift(version)
-
   return bech32.encode(prefix, words)
 }
 
 function fromBech32 (address) {
-  var result = bech32.decode(address)
-  var data = bech32.fromWords(result.words.slice(1))
-
+  let result = bech32.decode(address)
+  let version = result.words[0]
+  let dataWords = result.words.slice(1)
+  let data = bech32.fromWords(dataWords)
   return {
-    version: result.words[0],
+    version: version,
     prefix: result.prefix,
     data: Buffer.from(data)
   }
@@ -52,11 +46,9 @@ function fromBech32 (address) {
 function stacksEqual (a, b) {
   if (a.length !== b.length) return false
 
-  for (let i = 0; i < a.length; ++i) {
-    if (!a[i].equals(b[i])) return false
-  }
-
-  return true
+  return a.every(function (x, i) {
+    return x.equals(b[i])
+  })
 }
 
 // input: OP_0 [signatures ...]
@@ -507,7 +499,7 @@ function p2sh (a) {
 
 // input: <>
 // witness: [redeemScriptSig ...] {redeemScript}
-// output: OP_0 {hash160(redeemScript)}
+// output: OP_0 {sha256(redeemScript)}
 function p2wsh (a) {
   typef({
     address: typef.maybe(typef.String),
@@ -595,12 +587,11 @@ function p2wsh (a) {
   let output = a.output
   if (output) {
     if (
-      output.length !== 23 ||
-      output[0] !== OPS.OP_HASH160 ||
-      output[1] !== 0x14 ||
-      output[22] !== OPS.OP_EQUAL) throw new TypeError('Output is invalid')
+      output.length !== 34 ||
+      output[0] !== OPS.OP_0 ||
+      output[1] !== 0x20) throw new TypeError('Output is invalid')
 
-    let scriptHash = output.slice(1, 21)
+    let scriptHash = output.slice(2)
     if (hash && !hash.equals(scriptHash)) throw new TypeError('Hash mismatch')
     if (!hash) hash = scriptHash
   }
@@ -625,5 +616,14 @@ function p2wsh (a) {
 }
 
 module.exports = {
-  p2ms, p2pk, p2pkh, p2wpkh, p2sh, p2wsh
+  fromBase58Check,
+  fromBech32,
+  toBase58Check,
+  toBech32,
+  p2ms,
+  p2pk,
+  p2pkh,
+  p2wpkh,
+  p2sh,
+  p2wsh
 }
