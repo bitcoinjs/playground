@@ -176,18 +176,19 @@ function p2pk (a) {
   let pubkey = a.pubkey
 
   if (output) {
-    if (output[output.length - 1] !== OPS.CHECKSIG) throw new TypeError('Output is invalid')
+    if (output[output.length - 1] !== OPS.OP_CHECKSIG) throw new TypeError('Output is invalid')
 
     let outputPubKey = output.slice(0, -1)
     if (pubkey && !pubkey.equals(outputPubKey)) throw new TypeError('PubKey mismatch')
+    if (!pubkey && !bscript.isCanonicalPubKey(outputPubKey)) throw new TypeError('Output pubkey is invalid')
     if (!pubkey) pubkey = outputPubKey
   }
 
   if (!pubkey) throw new TypeError('Not enough data')
   if (!output) {
     output = bscript.compile([
-      OPS.OP_CHECKSIG,
-      pubkey
+      pubkey,
+      OPS.OP_CHECKSIG
     ])
   }
 
