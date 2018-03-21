@@ -1,47 +1,13 @@
 let {
+  address: baddress,
   crypto: bcrypto,
   networks: bnetworks,
   script: bscript
 } = require('bitcoinjs-lib')
-let bech32 = require('bech32')
-let bs58check = require('bs58check')
 let typef = require('typeforce')
 let OPS = require('bitcoin-ops')
 let OP_INT_BASE = OPS.OP_RESERVED // OP_1 - 1
 let EMPTY_BUFFER = Buffer.alloc(0)
-
-function toBase58Check (hash, version) {
-  typef(typef.tuple(typef.Buffer, typef.UInt8), arguments)
-  let payload = Buffer.allocUnsafe(1 + hash.length)
-  payload.writeUInt8(version, 0)
-  hash.copy(payload, 1)
-  return bs58check.encode(payload)
-}
-
-function fromBase58Check (address) {
-  let payload = bs58check.decode(address)
-  let version = payload.readUInt8(0)
-  let hash = payload.slice(1)
-  return { hash: hash, version: version }
-}
-
-function toBech32 (data, version, prefix) {
-  let words = bech32.toWords(data)
-  words.unshift(version)
-  return bech32.encode(prefix, words)
-}
-
-function fromBech32 (address) {
-  let result = bech32.decode(address)
-  let version = result.words[0]
-  let dataWords = result.words.slice(1)
-  let data = bech32.fromWords(dataWords)
-  return {
-    version: version,
-    prefix: result.prefix,
-    data: Buffer.from(data)
-  }
-}
 
 function stacksEqual (a, b) {
   if (a.length !== b.length) return false
@@ -346,7 +312,7 @@ function p2wpkh (a) {
   let network = a.network || bnetworks.bitcoin
   let address = a.address
   if (address) {
-    let decode = fromBech32(address)
+    let decode = baddress.fromBech32(address)
     if (network && network.bech32 !== decode.prefix) throw new TypeError('Network mismatch')
     if (decode.version !== 0x00) throw new TypeError('Invalid version')
     if (decode.data.length !== 20) throw new TypeError('Invalid data')
@@ -369,7 +335,7 @@ function p2wpkh (a) {
 
   if (!hash) throw new TypeError('Not enough data')
   if (!address) {
-    address = toBech32(hash, 0x00, network.bech32)
+    address = baddress.toBech32(hash, 0x00, network.bech32)
   }
 
   if (!output) {
@@ -458,7 +424,7 @@ function p2sh (a) {
 
   let address = a.address
   if (address) {
-    let decode = fromBase58Check(address)
+    let decode = baddress.fromBase58Check(address)
     if (network && network.scriptHash !== decode.version) throw new TypeError('Network mismatch')
 
     if (hash && !hash.equals(decode.hash)) throw new TypeError('Hash mismatch')
@@ -480,7 +446,7 @@ function p2sh (a) {
 
   if (!hash) throw new TypeError('Not enough data')
   if (!address) {
-    address = toBase58Check(hash, network.scriptHash)
+    address = baddress.toBase58Check(hash, network.scriptHash)
   }
 
   if (!output) {
@@ -617,10 +583,6 @@ function p2wsh (a) {
 }
 
 module.exports = {
-  fromBase58Check,
-  fromBech32,
-  toBase58Check,
-  toBech32,
   p2ms,
   p2pk,
   p2pkh,

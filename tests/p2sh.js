@@ -2,7 +2,6 @@ let {
   ECPair
 } = require('bitcoinjs-lib')
 let tape = require('tape')
-let typef = require('typeforce')
 let { p2pkh, p2wpkh, p2wsh, p2sh, p2pk } = require('../scripts')
 let EMPTY_BUFFER = Buffer.alloc(0)
 
@@ -38,15 +37,6 @@ tape('supports recursion, better or worse', (t) => {
 })
 
 tape('derives output only', (t) => {
-  function hasSome (a) {
-    return typef({
-      address: typef.String,
-      hash: typef.BufferN(20),
-      network: typef.Object,
-      output: typef.BufferN(23)
-    }, a)
-  }
-
   let hash = Buffer.alloc(20, 0x01)
   let result1 = p2sh({ hash })
   t.same(result1.address, '31nKoVLBc2BXUeKQKhnimyrt9DD12VwG6p')
@@ -55,10 +45,8 @@ tape('derives output only', (t) => {
 
   let keyPair = ECPair.fromWIF('KxJknBSZjp9WwnrgkvfG1zpHtuEqRjcnsr9RFpxWnk2GNJbkGe42')
   let pubkey = keyPair.getPublicKeyBuffer()
-  let result2 = p2sh({ redeem: p2pkh({ pubkey }) })
 
-  t.ok(hasSome(result2))
-  t.ok(hasSome(p2sh({ output: result2.output })))
+  let result2 = p2sh({ redeem: p2pkh({ pubkey }) })
   t.same(result2.address, '3GETYP4cuSesh2zsPEEYVZqnRedwe4FwUT')
   t.same(result2.redeem.address, '1JnHvAd2m9YqykjpF11a4y59hpt5KoqRmn')
   t.same(result2.redeem.hash.toString('hex'), 'c30afa58ae0673b00a45b5c17dff4633780f1400')
@@ -73,9 +61,9 @@ tape('derives output only', (t) => {
   t.same(result3.redeem.pubkey.toString('hex'), '03e15819590382a9dd878f01e2f0cbce541564eb415e43b440472d883ecd283058')
 
   let result4 = p2wsh({ redeem: p2pk({ pubkey }) })
-  t.same(result4.address, 'bc1qqf0ysa4w6ltg32nchymdku787su2zryhgjdxxdmde88ml47n3zcqr6cl4k')
-  t.same(result4.redeem.output.toString('hex'), 'ac2103e15819590382a9dd878f01e2f0cbce541564eb415e43b440472d883ecd283058')
+  t.same(result4.redeem.output.toString('hex'), '2103e15819590382a9dd878f01e2f0cbce541564eb415e43b440472d883ecd283058ac')
   t.same(result4.redeem.pubkey.toString('hex'), '03e15819590382a9dd878f01e2f0cbce541564eb415e43b440472d883ecd283058')
+  t.same(result4.address, 'bc1q6rgl33d3s9dugudw7n68yrryajkr3ha9q8q24j20zs62se4q9tsqdy0t2q')
   t.end()
 })
 
