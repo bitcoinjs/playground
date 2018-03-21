@@ -2,7 +2,7 @@ let { ECPair } = require('bitcoinjs-lib')
 let tape = require('tape')
 let { p2pk } = require('../scripts')
 
-tape('derives everything', (t) => {
+tape('derives both', (t) => {
   let keyPair = ECPair.fromWIF('KxJknBSZjp9WwnrgkvfG1zpHtuEqRjcnsr9RFpxWnk2GNJbkGe42')
   let pubkey = keyPair.getPublicKeyBuffer()
   let signature = keyPair.sign(Buffer.alloc(32)).toScriptSignature(0x01)
@@ -14,6 +14,19 @@ tape('derives everything', (t) => {
   t.same(result1.witness, undefined)
   t.same(result1.pubkey, pubkey)
   t.same(result1.signature, signature)
+})
+
+tape('derives output only', (t) => {
+  let keyPair = ECPair.fromWIF('KxJknBSZjp9WwnrgkvfG1zpHtuEqRjcnsr9RFpxWnk2GNJbkGe42')
+  let pubkey = keyPair.getPublicKeyBuffer()
+  let result1 = p2pk({ pubkey })
+
+  t.plan(5)
+  t.same(result1.output.toString('hex'), '2103e15819590382a9dd878f01e2f0cbce541564eb415e43b440472d883ecd283058ac')
+  t.same(result1.input, undefined)
+  t.same(result1.witness, undefined)
+  t.same(result1.pubkey, pubkey)
+  t.same(result1.signature, undefined)
 })
 
 tape('throws with not enough data', (t) => {
