@@ -4,7 +4,9 @@ let {
   script: bscript
 } = require('bitcoinjs-lib')
 let tape = require('tape')
-let { p2wsh, p2sh, p2ms } = require('../scripts')
+let p2ms = require('../p2ms')
+let p2sh = require('../p2sh')
+let p2wsh = require('../p2wsh')
 
 tape('throws with not enough data', (t) => {
   t.plan(1)
@@ -28,7 +30,7 @@ tape('derives output only', (t) => {
   t.end()
 })
 
-tape('derives everything', (t) => {
+tape('derives both', (t) => {
   let keyPairs = [
     'KxJknBSZjp9WwnrgkvfG1zpHtuEqRjcnsr9RFpxWnk2GNJbkGe42',
     'Kys5pPp2GAy8GZW5tkdEAHF1DQbN8mMmpfvBEvbF4u9CWfFGKge5',
