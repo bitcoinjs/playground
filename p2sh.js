@@ -52,7 +52,7 @@ function p2sh (a) {
     return baddress.toBase58Check(o.hash, network.scriptHash)
   })
   lazyprop(o, 'hash', function () {
-    if (a.output) return a.output.slice(1, 21)
+    if (a.output) return a.output.slice(2, 22)
     if (a.address) return baddress.fromBase58Check(a.address, network.scriptHash).hash
     if (!o.redeem) return
     if (o.redeem.output) return bcrypto.hash160(o.redeem.output)
@@ -72,7 +72,8 @@ function p2sh (a) {
     return {
       network: o.network,
       output: chunks[chunks.length - 1],
-      input: bscript.compile(chunks.slice(0, -1))
+      input: bscript.compile(chunks.slice(0, -1)),
+      witness: a.witness
     }
   })
   lazyprop(o, 'input', function () {
@@ -93,7 +94,7 @@ function p2sh (a) {
   if (a.address) {
     let decode = baddress.fromBase58Check(a.address, network.scriptHash)
     if (network.scriptHash !== decode.version) throw new TypeError('Network mismatch')
-    if (!a.hash.equals(decode.hash)) throw new TypeError('Hash mismatch')
+    if (a.hash && !a.hash.equals(decode.hash)) throw new TypeError('Hash mismatch')
     o.hash = decode.hash
   }
 
@@ -107,6 +108,27 @@ function p2sh (a) {
     if (a.hash && !a.hash.equals(o.hash)) throw new TypeError('Hash mismatch')
   }
 
+  function validateRedeem (redeem) {
+    if (network !== redeem.network) throw new TypeError('Network mismatch')
+
+    // is redeemScript a valid script?
+    if (bscript.decompile(redeem.output).length === 0) throw new TypeError('Redeem.output is invalid')
+
+    // match hash against other sources
+    if (a.output || a.address || a.hash) {
+      let redeemOutputHash = bcrypto.hash160(redeem.output)
+      if (!o.hash.equals(redeemOutputHash)) throw new TypeError('Hash mismatch')
+    }
+
+    if (redeem.input) {
+      if (redeem.input.length === 0 && !redeem.witness) throw new TypeError('Redeem.input is invalid')
+      if (redeem.input.length !== 0 && redeem.witness) throw new TypeError('Unexpected witness')
+
+      let redeemInputChunks = bscript.decompile(redeem.input)
+      if (!bscript.isPushOnly(redeemInputChunks)) throw new TypeError('Non push-only scriptSig')
+    }
+  }
+
   if (a.input) {
     let chunks = bscript.decompile(a.input)
     if (chunks.length < 1) throw new TypeError('Input too short')
@@ -116,28 +138,11 @@ function p2sh (a) {
       !a.redeem.input.equals(o.redeem.input)) throw new TypeError('Input and redeem.input mismatch')
     if (a.redeem &&
       !a.redeem.output.equals(o.redeem.output)) throw new TypeError('Input and redeem.output mismatch')
+
+    validateRedeem(o.redeem)
   }
 
-  if (a.redeem) {
-    if (network !== a.redeem.network) throw new TypeError('Network mismatch')
-
-    // is redeemScript a valid script?
-    if (bscript.decompile(a.redeem.output).length === 0) throw new TypeError('Redeem.output is invalid')
-
-    // match hash against other sources
-    if (a.output || a.address || a.hash) {
-      let redeemOutputHash = bcrypto.hash160(a.redeem.output)
-      if (o.hash.equals(redeemOutputHash)) throw new TypeError('Hash mismatch')
-    }
-
-    if (a.redeem.input) {
-      if (a.redeem.input.length === 0 && !a.redeem.witness) throw new TypeError('Redeem.input is invalid')
-      if (a.redeem.input.length !== 0 && a.redeem.witness) throw new TypeError('Unexpected witness')
-
-      let redeemInputChunks = bscript.decompile(a.redeem.input)
-      if (!bscript.isPushOnly(redeemInputChunks)) throw new TypeError('Non push-only scriptSig')
-    }
-  }
+  if (a.redeem) validateRedeem(a.redeem)
 
   if (a.witness) {
     if (a.redeem &&

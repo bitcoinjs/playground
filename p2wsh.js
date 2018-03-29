@@ -6,7 +6,7 @@ let {
 } = require('bitcoinjs-lib')
 let typef = require('typeforce')
 let OPS = require('bitcoin-ops')
-//  let { lazyprop } = require('./lazy')
+let { lazyprop } = require('./lazy')
 let EMPTY_BUFFER = Buffer.alloc(0)
 
 function stacksEqual (a, b) {
@@ -28,21 +28,6 @@ function p2wsh (a) {
     !a.redeem &&
     !a.witness
   ) throw new TypeError('Not enough data')
-
-  typef({
-    address: typef.maybe(typef.String),
-    hash: typef.maybe(typef.BufferN(32)),
-    input: typef.maybe(typef.BufferN(0)),
-    network: typef.maybe(typef.Object),
-    output: typef.maybe(typef.BufferN(34)),
-    redeem: typef.maybe({
-      input: typef.maybe(typef.Buffer),
-      network: typef.Object,
-      output: typef.Buffer,
-      witness: typef.maybe(typef.arrayOf(typef.Buffer))
-    }),
-    witness: typef.maybe(typef.arrayOf(typef.Buffer))
-  }, a)
 
   let input = a.input
   let redeem = a.redeem
@@ -111,36 +96,140 @@ function p2wsh (a) {
     if (hash && !hash.equals(decode.data)) throw new TypeError('Hash mismatch')
     if (!hash) hash = decode.data
   }
+}
 
-  let output = a.output
-  if (output) {
-    if (
-      output.length !== 34 ||
-      output[0] !== OPS.OP_0 ||
-      output[1] !== 0x20) throw new TypeError('Output is invalid')
+// input: <>
+// witness: [redeemScriptSig ...] {redeemScript}
+// output: OP_0 {sha256(redeemScript)}
+function _p2wsh (a) {
+  if (
+    !a.address &&
+    !a.hash &&
+    !a.output &&
+    !a.redeem &&
+    !a.input &&
+    !a.witness
+  ) throw new TypeError('Not enough data')
 
-    let scriptHash = output.slice(2)
-    if (hash && !hash.equals(scriptHash)) throw new TypeError('Hash mismatch')
-    if (!hash) hash = scriptHash
-  }
+  typef({
+    network: typef.maybe(typef.Object),
 
-  if (!hash) throw new TypeError('Not enough data')
-  if (!address) {
-    address = baddress.toBech32(hash, 0x00, network.bech32)
-  }
+    address: typef.maybe(typef.String),
+    hash: typef.maybe(typef.BufferN(32)),
+    output: typef.maybe(typef.BufferN(34)),
 
-  if (!output) {
-    output = bscript.compile([
+    redeem: typef.maybe({
+      input: typef.maybe(typef.Buffer),
+      network: typef.Object,
+      output: typef.Buffer,
+      witness: typef.maybe(typef.arrayOf(typef.Buffer))
+    }),
+    input: typef.maybe(typef.BufferN(0)),
+    witness: typef.maybe(typef.arrayOf(typef.Buffer))
+  }, a)
+
+  let network = a.network || bnetworks.bitcoin
+  let o = { network }
+  lazyprop(o, 'address', function () {
+    if (!o.hash) return
+    return baddress.toBech32(o.hash, 0x00, network.bech32)
+  })
+  lazyprop(o, 'hash', function () {
+    if (a.output) return a.output.slice(2)
+    if (a.address) return baddress.fromBech32(a.address).hash
+    if (!o.redeem) return
+    if (o.redeem.output) return bcrypto.sha256(o.redeem.output)
+  })
+  lazyprop(o, 'output', function () {
+    if (!o.hash) return
+    return bscript.compile([
       OPS.OP_0,
-      hash
+      o.hash
     ])
+  })
+
+  lazyprop(o, 'redeem', function () {
+    if (!a.input) return
+    let chunks = bscript.decompile(a.input)
+    return {
+      network: o.network,
+      output: chunks[chunks.length - 1],
+      input: bscript.compile(chunks.slice(0, -1))
+    }
+  })
+  lazyprop(o, 'input', function () {
+    if (!a.redeem) return
+    if (!a.redeem.input) return
+    if (!a.redeem.output) return
+
+    return bscript.compile([].concat(
+      bscript.decompile(a.redeem.input),
+      a.redeem.output
+    ))
+  })
+  lazyprop(o, 'witness', function () {
+    return o.redeem.witness
+  })
+
+  // validation
+  if (a.address) {
+    let decode = baddress.fromBech32(a.address, network.scriptHash)
+    if (network.bech32 !== decode.prefix) throw new TypeError('Network mismatch')
+    if (decode.version !== 0x00) throw new TypeError('Invalid version')
+    if (decode.data.length !== 32) throw new TypeError('Invalid data')
+    if (!a.hash.equals(decode.hash)) throw new TypeError('Hash mismatch')
+    o.hash = decode.hash
   }
 
-  let result = { address, hash, network, output }
-  if (input) result.input = input
-  if (redeem) result.redeem = redeem
-  if (witness) result.witness = witness
-  return result
+  if (a.output) {
+    if (
+      a.output.length !== 34 ||
+      a.output[0] !== OPS.OP_0 ||
+      a.output[1] !== 0x20) throw new TypeError('Output is invalid')
+
+    if (a.hash && !a.hash.equals(o.hash)) throw new TypeError('Hash mismatch')
+  }
+
+  if (a.input) {
+    let chunks = bscript.decompile(a.input)
+    if (chunks.length < 1) throw new TypeError('Input too short')
+    if (!Buffer.isBuffer(o.redeem.output)) throw new TypeError('Input is invalid')
+    if (a.redeem &&
+      a.redeem.input &&
+      !a.redeem.input.equals(o.redeem.input)) throw new TypeError('Input and redeem.input mismatch')
+    if (a.redeem &&
+      !a.redeem.output.equals(o.redeem.output)) throw new TypeError('Input and redeem.output mismatch')
+  }
+
+  if (a.redeem) {
+    if (network !== a.redeem.network) throw new TypeError('Network mismatch')
+
+    // is redeemScript a valid script?
+    if (bscript.decompile(a.redeem.output).length === 0) throw new TypeError('Redeem.output is invalid')
+
+    // match hash against other sources
+    if (a.output || a.address || a.hash) {
+      let redeemOutputHash = bcrypto.hash160(a.redeem.output)
+      if (o.hash.equals(redeemOutputHash)) throw new TypeError('Hash mismatch')
+    }
+
+    if (a.redeem.input) {
+      if (a.redeem.input.length === 0 && !a.redeem.witness) throw new TypeError('Redeem.input is invalid')
+      if (a.redeem.input.length !== 0 && a.redeem.witness) throw new TypeError('Unexpected witness')
+
+      let redeemInputChunks = bscript.decompile(a.redeem.input)
+      if (!bscript.isPushOnly(redeemInputChunks)) throw new TypeError('Non push-only scriptSig')
+    }
+  }
+
+  if (a.witness) {
+    if (a.redeem &&
+      a.redeem.witness &&
+      a.witness &&
+      !stacksEqual(a.redeem.witness, a.witness)) throw new TypeError('Witness and redeem.witness mismatch')
+  }
+
+  return Object.assign(o, a)
 }
 
 module.exports = p2wsh
