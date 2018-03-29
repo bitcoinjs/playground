@@ -13,6 +13,14 @@ let { lazyprop } = require('./lazy')
 // input: <>
 // output: OP_0 {pubKeyHash}
 function p2wpkh (a) {
+  if (
+    !a.address &&
+    !a.hash &&
+    !a.output &&
+    !a.pubkey &&
+    !a.witness
+  ) throw new TypeError('Not enough data')
+
   typef({
     address: typef.maybe(typef.String),
     hash: typef.maybe(typef.BufferN(20)),
@@ -94,14 +102,6 @@ function p2wpkh (a) {
       a.output[0] !== OPS.OP_0 ||
       a.output[1] !== 0x14) throw new TypeError('Output is invalid')
   }
-
-  if (
-    !a.address &&
-    !a.hash &&
-    !a.output &&
-    !a.pubkey &&
-    !a.witness
-  ) throw new TypeError('Not enough data')
 
   return Object.assign(o, a)
 }

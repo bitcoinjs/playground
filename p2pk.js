@@ -9,6 +9,11 @@ let { lazyprop } = require('./lazy')
 // input: {signature}
 // output: {pubKey} OP_CHECKSIG
 function p2pk (a) {
+  if (
+    !a.output &&
+    !a.pubkey
+  ) throw new TypeError('Not enough data')
+
   typef({
     network: typef.maybe(typef.Object),
     output: typef.maybe(typef.Buffer),
@@ -63,11 +68,6 @@ function p2pk (a) {
   if (a.pubkey && a.output) {
     if (!a.pubkey.equals(o.pubkey)) throw new TypeError('PubKey mismatch')
   }
-
-  if (
-    !a.output &&
-    !a.pubkey
-  ) throw new TypeError('Not enough data')
 
   return Object.assign(o, a)
 }
