@@ -47,7 +47,6 @@ tape('derives output only', (t) => {
   t.same(result4.address, 'bc1q6rgl33d3s9dugudw7n68yrryajkr3ha9q8q24j20zs62se4q9tsqdy0t2q')
   t.end()
 })
-return
 
 tape('derives both', (t) => {
   let keyPair = ECPair.fromWIF('KxJknBSZjp9WwnrgkvfG1zpHtuEqRjcnsr9RFpxWnk2GNJbkGe42')
