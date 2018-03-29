@@ -21,6 +21,14 @@ function stacksEqual (a, b) {
 // witness: [redeemScriptSig ...] {redeemScript}
 // output: OP_0 {sha256(redeemScript)}
 function p2wsh (a) {
+  if (
+    !a.address &&
+    !a.hash &&
+    !a.output &&
+    !a.redeem &&
+    !a.witness
+  ) throw new TypeError('Not enough data')
+
   typef({
     address: typef.maybe(typef.String),
     hash: typef.maybe(typef.BufferN(32)),
