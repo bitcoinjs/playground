@@ -12,13 +12,14 @@ let { lazyprop } = require('./lazy')
 // output: OP_DUP OP_HASH160 {hash160(pubkey)} OP_EQUALVERIFY OP_CHECKSIG
 function p2pkh (a) {
   typef({
+    network: typef.maybe(typef.Object),
     address: typef.maybe(typef.String),
     hash: typef.maybe(typef.BufferN(20)),
-    input: typef.maybe(typef.Buffer),
-    network: typef.maybe(typef.Object),
     output: typef.maybe(typef.BufferN(25)),
+
     pubkey: typef.maybe(bscript.isCanonicalPubKey),
-    signature: typef.maybe(bscript.isCanonicalSignature)
+    signature: typef.maybe(bscript.isCanonicalSignature),
+    input: typef.maybe(typef.Buffer)
   }, a)
 
   let network = a.network || bnetworks.bitcoin
@@ -70,8 +71,9 @@ function p2pkh (a) {
 
     if (a.signature && !a.signature.equals(chunks[0])) throw new TypeError('Signature mismatch')
     if (a.pubkey && !a.pubkey.equals(chunks[1])) throw new TypeError('Pubkey mismatch')
-    if (!a.signature) o.signature = chunks[0]
-    if (!a.pubkey) o.pubkey = chunks[1]
+
+    o.signature = chunks[0]
+    o.pubkey = chunks[1]
   }
 
   if (a.address) {

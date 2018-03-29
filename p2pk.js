@@ -10,19 +10,16 @@ let { lazyprop } = require('./lazy')
 // output: {pubKey} OP_CHECKSIG
 function p2pk (a) {
   typef({
-    input: typef.maybe(typef.Buffer),
     network: typef.maybe(typef.Object),
     output: typef.maybe(typef.Buffer),
+
     pubkey: typef.maybe(bscript.isCanonicalPubKey),
-    signature: typef.maybe(bscript.isCanonicalSignature)
+    signature: typef.maybe(bscript.isCanonicalSignature),
+    input: typef.maybe(typef.Buffer)
   }, a)
 
   let network = a.network || bnetworks.bitcoin
   let o = { network }
-  lazyprop(o, 'input', function () {
-    if (!a.signature) return
-    return bscript.compile([a.signature])
-  })
   lazyprop(o, 'output', function () {
     if (!a.pubkey) return
     return bscript.compile([
@@ -38,6 +35,10 @@ function p2pk (a) {
     if (!a.input) return
     return bscript.decompile(a.input)[0]
   })
+  lazyprop(o, 'input', function () {
+    if (!a.signature) return
+    return bscript.compile([a.signature])
+  })
 
   // validation
   if (a.input) {
@@ -46,7 +47,8 @@ function p2pk (a) {
     if (
       chunks.length !== 1 || !bscript.isCanonicalSignature(chunks[0])
     ) throw new TypeError('Input is invalid')
-    if (!a.signature) o.signature = chunks[0]
+
+    o.signature = chunks[0]
   }
 
   if (a.input && a.signature) {

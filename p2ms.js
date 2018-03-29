@@ -5,6 +5,7 @@ let {
 let typef = require('typeforce')
 let OPS = require('bitcoin-ops')
 let OP_INT_BASE = OPS.OP_RESERVED // OP_1 - 1
+let { lazyprop } = require('./lazy')
 
 function stacksEqual (a, b) {
   if (a.length !== b.length) return false
@@ -22,45 +23,63 @@ function p2ms (a) {
   }
 
   typef({
-    input: typef.maybe(typef.Buffer),
+    network: typef.maybe(typef.Object),
     m: typef.maybe(typef.Number),
     n: typef.maybe(typef.Number),
-    network: typef.maybe(typef.Object),
     output: typef.maybe(typef.BufferN(25)),
     pubkeys: typef.maybe(typef.arrayOf(bscript.isCanonicalPubKey)),
+
     signatures: typef.maybe(typef.arrayOf(isAcceptableSignature)),
+    input: typef.maybe(typef.Buffer),
     allowIncomplete: typef.maybe(typef.Boolean)
   }, a)
 
-  let input = a.input
-  let signatures = a.signatures
+  let network = a.network || bnetworks.bitcoin
+  let o = { network }
+  lazyprop(o, 'output', function () {
+    if (!o.m) return
+    if (!o.n) return
+    if (!o.pubkeys) return
+    return bscript.compile([].concat(
+      OP_INT_BASE + o.m,
+      o.pubkeys,
+      OP_INT_BASE + o.n,
+      OPS.OP_CHECKMULTISIG
+    ))
+  })
 
-  if (signatures) {
-    let script = bscript.compile([OPS.OP_0].concat(signatures))
-    if (input && !input.equals(script)) throw new TypeError('Input mismatch')
-    if (!input) input = script
+  lazyprop(o, 'pubkeys', function () {
+    if (!a.output) return
+//      if (a.n !== undefined) throw new TypeError('n PubKeys mismatch')
+    return bscript.decompile(a.output).slice(1, -2)
+  })
+  lazyprop(o, 'signatures', function () {
+    if (!a.input) return
+    return bscript.decompile(a.input).slice(1)
+  })
+  lazyprop(o, 'input', function () {
+    if (!a.signatures) return
+    return bscript.compile([OPS.OP_0].concat(a.signatures))
+  })
 
-  // use input for data
-  } else if (input) {
-    let chunks = bscript.decompile(input)
-    let signatureChunks = chunks.slice(1)
+  // validation
+  if (a.input) {
+    if (a.input[0] !== OPS.OP_0 ||
+      o.signatures.length === 0 ||
+      o.signatures.every(isAcceptableSignature)) throw new TypeError('Input is invalid')
 
-    if (chunks.length < 2 ||
-      chunks[0] !== OPS.OP_0 ||
-      signatureChunks.every(isAcceptableSignature)) throw new TypeError('Input is invalid')
-
-    if (signatures && !stacksEqual(signatures, signatureChunks)) throw new TypeError('Signatures mismatch')
-    if (!signatures) signatures = signatureChunks
+    if (a.signatures && !stacksEqual(a.signatures.equals(o.signatures))) throw new TypeError('Signature mismatch')
   }
 
-  let network = a.network || bnetworks.bitcoin
-  let output = a.output
-  let pubkeys = a.pubkeys
+  if (a.pubkeys) {
+    if (a.n !== undefined && a.n !== a.pubkeys.length) throw new TypeError('n PubKeys mismatch')
+    o.n = a.pubkeys.length
 
-  let m = a.m
-  let n = a.n
-  if (output) {
-    let chunks = bscript.decompile(output)
+    if (a.m !== undefined && o.n < a.m) throw new TypeError('Not enough pubKeys provided')
+  }
+
+  if (a.output) {
+    let chunks = bscript.decompile(a.output)
     if (chunks[chunks.length - 1] !== OPS.CHECKMULTISIG) throw new TypeError('Output is invalid')
     if (!typef.Number(chunks[0])) throw new TypeError('Output is invalid')
     if (!typef.Number(chunks[chunks.length - 2])) throw new TypeError('Output is invalid')
@@ -73,36 +92,24 @@ function p2ms (a) {
       om > on ||
       on !== chunks.length - 3) throw new TypeError('Output is invalid')
 
-    if (m !== undefined && m !== om) throw new TypeError('m mismatch')
-    if (n !== undefined && n !== on) throw new TypeError('n mismatch')
-    if (!m) m = om
-    if (!n) n = on
+    if (a.m !== undefined && a.m !== om) throw new TypeError('m mismatch')
+    if (a.n !== undefined && a.n !== on) throw new TypeError('n mismatch')
 
     let outputPubKeys = chunks.slice(1, -2)
     if (!outputPubKeys.every(x => bscript.isCanonicalPubKey(x))) throw new TypeError('Output is invalid')
-    if (pubkeys && !stacksEqual(pubkeys, outputPubKeys)) throw new TypeError('PubKeys mismatch')
-    if (!pubkeys) pubkeys = outputPubKeys
+    if (a.pubkeys && !stacksEqual(a.pubkeys, outputPubKeys)) throw new TypeError('PubKeys mismatch')
+
+    o.m = om
+    o.n = on
+    o.pubkeys = outputPubKeys
   }
 
-  if (!pubkeys) throw new TypeError('Not enough data (missing pubkeys)')
-  if (!typef.Number(m)) throw new TypeError('Not enough data (missing m)')
-  n = n || pubkeys.length
-  if (n !== pubkeys.length) throw new TypeError('n PubKeys mismatch')
-  if (n < m) throw new TypeError('Not enough pubKeys provided')
+  if (
+    !a.output &&
+    !a.pubkeys
+  ) throw new TypeError('Not enough data')
 
-  if (!output) {
-    output = bscript.compile([].concat(
-      OP_INT_BASE + m,
-      pubkeys,
-      OP_INT_BASE + n,
-      OPS.OP_CHECKMULTISIG
-    ))
-  }
-
-  let result = { m, n, network, output, pubkeys }
-  if (input) result.input = input
-  if (signatures) result.signature = signatures
-  return result
+  return Object.assign(o, a)
 }
 
 module.exports = p2ms
