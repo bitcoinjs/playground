@@ -50,7 +50,6 @@ function p2ms (a) {
 
   lazyprop(o, 'pubkeys', function () {
     if (!a.output) return
-//      if (a.n !== undefined) throw new TypeError('n PubKeys mismatch')
     return bscript.decompile(a.output).slice(1, -2)
   })
   lazyprop(o, 'signatures', function () {
@@ -106,7 +105,7 @@ function p2ms (a) {
 
   if (
     !a.output &&
-    !a.pubkeys
+    !(a.pubkeys && a.m !== undefined)
   ) throw new TypeError('Not enough data')
 
   return Object.assign(o, a)
