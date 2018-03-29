@@ -56,9 +56,6 @@ function p2wpkh (a) {
     if (!o.pubkey) o.pubkey = a.witness[1]
     return a.witness[0]
   })
-  lazyprop(o, 'input', function () {
-    return EMPTY_BUFFER
-  })
   lazyprop(o, 'witness', function () {
     if (!a.pubkey) return
     if (!a.signature) return
@@ -103,7 +100,7 @@ function p2wpkh (a) {
     !a.hash &&
     !a.output &&
     !a.pubkey &&
-    !a.input
+    !a.witness
   ) throw new TypeError('Not enough data')
 
   return Object.assign(o, a)
