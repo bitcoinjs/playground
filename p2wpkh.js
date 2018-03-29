@@ -7,6 +7,7 @@ let {
 let typef = require('typeforce')
 let OPS = require('bitcoin-ops')
 let EMPTY_BUFFER = Buffer.alloc(0)
+let { lazyprop } = require('./lazy')
 
 // witness: {signature} {pubKey}
 // input: <>
@@ -23,87 +24,89 @@ function p2wpkh (a) {
     witness: typef.maybe(typef.arrayOf(typef.Buffer))
   }, a)
 
-  let input = a.input
-  let pubkey = a.pubkey
-  let signature = a.signature
-  let witness = a.witness
-
-  if (pubkey && signature) {
-    if (witness && (
-      witness.length !== 2 ||
-      !witness[0].equals(signature) ||
-      !witness[1].equals(pubkey)
-    )) throw new TypeError('Witness mismatch')
-    if (!input) input = EMPTY_BUFFER
-    if (!witness) witness = [signature, pubkey]
-
-  // use witness for data
-  } else if (witness) {
-    if (witness.length !== 2 ||
-      !bscript.isCanonicalSignature(witness[0]) ||
-      !bscript.isCanonicalPubKey(witness[1])) throw new TypeError('Witness is invalid')
-
-    if (signature && !signature.equals(witness[0])) throw new TypeError('Signature mismatch')
-    if (!signature) signature = witness[0]
-
-    if (pubkey && !pubkey.equals(witness[1])) throw new TypeError('Pubkey mismatch')
-    if (!pubkey) pubkey = witness[1]
-
-    if (!input) input = EMPTY_BUFFER
-  }
-
-  if (!witness && input) throw new TypeError('Missing Witness')
-
-  let hash = a.hash
-  if (pubkey) {
-    let pubKeyHash = bcrypto.hash160(pubkey)
-
-    if (hash && !hash.equals(pubKeyHash)) throw new TypeError('Hash mismatch')
-    if (!hash) hash = pubKeyHash
-  }
-
   let network = a.network || bnetworks.bitcoin
-  let address = a.address
-  if (address) {
-    let decode = baddress.fromBech32(address)
+  let o = {
+    input: EMPTY_BUFFER,
+    network
+  }
+  lazyprop(o, 'address', function () {
+    if (!o.hash) return
+    return baddress.toBech32(o.hash, 0x00, network.bech32)
+  })
+  lazyprop(o, 'hash', function () {
+    if (a.output) return a.output.slice(2, 22)
+    if (a.address) return baddress.fromBech32(a.address).data
+    if (o.pubkey) return bcrypto.hash160(o.pubkey)
+  })
+  lazyprop(o, 'output', function () {
+    if (!o.hash) return
+    return bscript.compile([
+      OPS.OP_0,
+      o.hash
+    ])
+  })
+
+  lazyprop(o, 'pubkey', function () {
+    if (!a.witness) return
+    if (!a.signature) o.signature = a.witness[0]
+    return a.witness[1]
+  })
+  lazyprop(o, 'signature', function () {
+    if (!a.witness) return
+    if (!o.pubkey) o.pubkey = a.witness[1]
+    return a.witness[0]
+  })
+  lazyprop(o, 'input', function () {
+    return EMPTY_BUFFER
+  })
+  lazyprop(o, 'witness', function () {
+    if (!a.pubkey) return
+    if (!a.signature) return
+    return [a.signature, a.pubkey]
+  })
+
+  // validation
+  if (a.witness) {
+    if (a.witness.length !== 2 ||
+      !bscript.isCanonicalSignature(a.witness[0]) ||
+      !bscript.isCanonicalPubKey(a.witness[1])) throw new TypeError('Input is invalid')
+
+    if (a.signature && !a.signature.equals(a.witness[0])) throw new TypeError('Signature mismatch')
+    if (!a.signature) o.signature = a.witness[0]
+
+    if (a.pubkey && !a.pubkey.equals(a.witness[1])) throw new TypeError('Pubkey mismatch')
+    if (!a.pubkey) o.pubkey = a.witness[1]
+  }
+
+  if (a.address) {
+    let decode = baddress.fromBech32(a.address)
     if (network && network.bech32 !== decode.prefix) throw new TypeError('Network mismatch')
     if (decode.version !== 0x00) throw new TypeError('Invalid version')
     if (decode.data.length !== 20) throw new TypeError('Invalid data')
 
-    if (hash && !hash.equals(decode.data)) throw new TypeError('Hash mismatch')
-    if (!hash) hash = decode.data
+    o.hash = decode.data
   }
 
-  let output = a.output
-  if (output) {
+  if (a.pubkey && a.hash) {
+    if (!a.hash.equals(o.hash)) throw new TypeError('Hash mismatch')
+  }
+
+  if (a.output) {
     if (
-      output.length !== 22 ||
-      output[0] !== OPS.OP_0 ||
-      output[1] !== 0x14) throw new TypeError('Output is invalid')
-
-    let pubKeyHash = output.slice(2, 22)
-    if (hash && !hash.equals(pubKeyHash)) throw new TypeError('Hash mismatch')
-    if (!hash) hash = pubKeyHash
+      a.output.length !== 22 ||
+      a.output[0] !== OPS.OP_0 ||
+      a.output[1] !== 0x14) throw new TypeError('Output is invalid')
   }
 
-  if (!hash) throw new TypeError('Not enough data')
-  if (!address) {
-    address = baddress.toBech32(hash, 0x00, network.bech32)
-  }
+  if (
+    !a.address &&
+    !a.hash &&
+    !a.output &&
+    !a.pubkey &&
+    !a.input
+  ) throw new TypeError('Not enough data')
 
-  if (!output) {
-    output = bscript.compile([
-      OPS.OP_0,
-      hash
-    ])
-  }
-
-  let result = { address, hash, network, output }
-  if (input) result.input = input
-  if (pubkey) result.pubkey = pubkey
-  if (signature) result.signature = signature
-  if (witness) result.witness = witness
-  return result
+  return Object.assign(o, a)
 }
 
 module.exports = p2wpkh

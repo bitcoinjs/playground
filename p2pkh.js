@@ -74,6 +74,13 @@ function p2pkh (a) {
     if (!a.pubkey) o.pubkey = chunks[1]
   }
 
+  if (a.address) {
+    let decode = baddress.fromBase58Check(a.address, network.pubKeyHash)
+    if (network.pubKeyHash !== decode.version) throw new TypeError('Network mismatch')
+
+    o.hash = decode.hash
+  }
+
   if (a.pubkey && a.hash) {
     if (!a.hash.equals(o.hash)) throw new TypeError('Hash mismatch')
   }
