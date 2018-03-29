@@ -16,7 +16,7 @@ tape('derives output only', (t) => {
 
   t.plan(7)
   t.same(result1.output.toString('hex'), '0014c30afa58ae0673b00a45b5c17dff4633780f1400')
-  t.same(result1.input.toString('hex'), '')
+  t.same(result1.input, undefined)
   t.same(result1.witness, undefined)
   t.same(result1.pubkey.toString('hex'), '03e15819590382a9dd878f01e2f0cbce541564eb415e43b440472d883ecd283058')
   t.same(result1.signature, undefined)

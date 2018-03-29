@@ -33,10 +33,7 @@ function p2wpkh (a) {
   }, a)
 
   let network = a.network || bnetworks.bitcoin
-  let o = {
-    input: EMPTY_BUFFER,
-    network
-  }
+  let o = { network }
   lazyprop(o, 'address', function () {
     if (!o.hash) return
     return baddress.toBech32(o.hash, 0x00, network.bech32)
@@ -63,6 +60,10 @@ function p2wpkh (a) {
     if (!a.witness) return
     if (!o.pubkey) o.pubkey = a.witness[1]
     return a.witness[0]
+  })
+  lazyprop(o, 'input', function () {
+    if (!o.witness) return
+    return EMPTY_BUFFER
   })
   lazyprop(o, 'witness', function () {
     if (!a.pubkey) return
