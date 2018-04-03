@@ -66,7 +66,7 @@ function p2pk (a) {
   }
 
   if (a.pubkey && a.output) {
-    if (!a.pubkey.equals(o.pubkey)) throw new TypeError('PubKey mismatch')
+    if (!a.pubkey.equals(o.pubkey)) throw new TypeError('Pubkey mismatch')
   }
 
   return Object.assign(o, a)

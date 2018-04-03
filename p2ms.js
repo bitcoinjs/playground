@@ -42,11 +42,12 @@ function p2ms (a) {
   let network = a.network || bnetworks.bitcoin
   let o = { network }
 
+  let chunks
   let decoded = false
-  function decode () {
+  function decode (output) {
     if (decoded) return
     decoded = true
-    let chunks = bscript.decompile(a.output)
+    chunks = bscript.decompile(output)
     let om = chunks[0] - OP_INT_BASE
     let on = chunks[chunks.length - 2] - OP_INT_BASE
     o.m = om
@@ -67,7 +68,7 @@ function p2ms (a) {
   })
   lazyprop(o, 'm', function () {
     if (!o.output) return
-    decode()
+    decode(o.output)
     return o.m
   })
   lazyprop(o, 'n', function () {
@@ -76,7 +77,7 @@ function p2ms (a) {
   })
   lazyprop(o, 'pubkeys', function () {
     if (!a.output) return
-    decode()
+    decode(a.output)
     return o.pubkeys
   })
   lazyprop(o, 'signatures', function () {
@@ -92,37 +93,38 @@ function p2ms (a) {
   if (a.input) {
     if (a.input[0] !== OPS.OP_0 ||
       o.signatures.length === 0 ||
-      o.signatures.every(isAcceptableSignature)) throw new TypeError('Input is invalid')
+      !o.signatures.every(isAcceptableSignature)) throw new TypeError('Input is invalid')
 
     if (a.signatures && !stacksEqual(a.signatures.equals(o.signatures))) throw new TypeError('Signature mismatch')
   }
 
   if (a.pubkeys) {
-    if (a.n !== undefined && a.n !== a.pubkeys.length) throw new TypeError('n PubKeys mismatch')
+    if (a.n !== undefined && a.n !== a.pubkeys.length) throw new TypeError('n Pubkeys mismatch')
     o.n = a.pubkeys.length
 
-    if (o.n < a.m) throw new TypeError('Not enough pubKeys provided')
+    if (o.n < o.m) throw new TypeError('Not enough pubkeys provided')
+  }
+
+  if (a.signatures) {
+    if (a.signatures.length < o.m) throw new TypeError('Not enough signatures provided')
   }
 
   if (a.output) {
-    let chunks = bscript.decompile(a.output)
+    decode(a.output)
     if (chunks[chunks.length - 1] !== OPS.OP_CHECKMULTISIG) throw new TypeError('Output is invalid')
     if (!typef.Number(chunks[0])) throw new TypeError('Output is invalid')
     if (!typef.Number(chunks[chunks.length - 2])) throw new TypeError('Output is invalid')
 
-    let om = chunks[0] - OP_INT_BASE
-    let on = chunks[chunks.length - 2] - OP_INT_BASE
     if (
-      om <= 0 ||
-      on > 16 ||
-      om > on ||
-      on !== chunks.length - 3) throw new TypeError('Output is invalid')
-
-    if (a.m !== undefined && a.m !== om) throw new TypeError('m mismatch')
-    if (a.n !== undefined && a.n !== on) throw new TypeError('n mismatch')
-
+      o.m <= 0 ||
+      o.n > 16 ||
+      o.m > o.n ||
+      o.n !== chunks.length - 3) throw new TypeError('Output is invalid')
     if (!o.pubkeys.every(x => bscript.isCanonicalPubKey(x))) throw new TypeError('Output is invalid')
-    if (a.pubkeys && !stacksEqual(a.pubkeys, o.pubkeys)) throw new TypeError('PubKeys mismatch')
+
+    if (a.m !== undefined && a.m !== o.m) throw new TypeError('m mismatch')
+    if (a.n !== undefined && a.n !== o.n) throw new TypeError('n mismatch')
+    if (a.pubkeys && !stacksEqual(a.pubkeys, o.pubkeys)) throw new TypeError('Pubkeys mismatch')
   }
 
   return Object.assign(o, a)
