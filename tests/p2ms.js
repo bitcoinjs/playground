@@ -35,12 +35,7 @@ tape('derives output only', (t) => {
   })
 
   // derives from output only
-  u.equate(t, p2ms({ output: base.output }), {
-    m: 2,
-    n: 3,
-    output: base.output,
-    pubkeys: base.pubkeys
-  })
+  t.same(p2ms({ output: base.output }), base)
 
   // matches the pubkeys AND the outputs
   t.throws(function () {
@@ -90,9 +85,7 @@ tape('derives input and output', (t) => {
     allowIncomplete: true
   })
 
-  console.log(derived2, derived2b)
-
-  u.equate(t, derived2, {
+  u.equate(t, derived2b, {
     m: 2,
     n: 3,
     pubkeys: u.PUBKEYS3, // contextual, derived
