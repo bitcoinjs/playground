@@ -87,6 +87,7 @@ function p2sh (a) {
     ))
   })
   lazyprop(o, 'witness', function () {
+    if (!o.redeem) return
     return o.redeem.witness
   })
 
