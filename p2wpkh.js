@@ -53,12 +53,10 @@ function p2wpkh (a) {
 
   lazyprop(o, 'pubkey', function () {
     if (!a.witness) return
-    if (!a.signature) o.signature = a.witness[0]
     return a.witness[1]
   })
   lazyprop(o, 'signature', function () {
     if (!a.witness) return
-    if (!o.pubkey) o.pubkey = a.witness[1]
     return a.witness[0]
   })
   lazyprop(o, 'input', function () {

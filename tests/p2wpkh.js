@@ -1,6 +1,6 @@
-let { ECPair } = require('bitcoinjs-lib')
 let tape = require('tape')
 let p2wpkh = require('../p2wpkh')
+let u = require('./util')
 
 tape('throws with not enough data', (t) => {
   t.plan(1)
@@ -10,34 +10,40 @@ tape('throws with not enough data', (t) => {
 })
 
 tape('derives output only', (t) => {
-  let keyPair = ECPair.fromWIF('KxJknBSZjp9WwnrgkvfG1zpHtuEqRjcnsr9RFpxWnk2GNJbkGe42')
-  let pubkey = keyPair.getPublicKeyBuffer()
-  let result1 = p2wpkh({ pubkey })
+  let base = p2wpkh({ hash: u.HASH20 })
 
-  t.plan(7)
-  t.same(result1.output.toString('hex'), '0014c30afa58ae0673b00a45b5c17dff4633780f1400')
-  t.same(result1.input, undefined)
-  t.same(result1.witness, undefined)
-  t.same(result1.pubkey.toString('hex'), '03e15819590382a9dd878f01e2f0cbce541564eb415e43b440472d883ecd283058')
-  t.same(result1.signature, undefined)
-  t.same(result1.address, 'bc1qcv905k9wqeemqzj9khqhml6xxduq79qqy745vn')
-  t.same(result1.hash.toString('hex'), 'c30afa58ae0673b00a45b5c17dff4633780f1400')
+  u.equate(t, base, {
+    address: 'bc1qqyqszqgpqyqszqgpqyqszqgpqyqszqgpyfl4f3',
+    hash: '0101010101010101010101010101010101010101',
+    output: '00140101010101010101010101010101010101010101',
+    pubkey: undefined,
+    signature: undefined,
+    input: undefined,
+    witness: undefined
+  })
+  u.equate(t, p2wpkh({ address: base.address }), base)
+  u.equate(t, p2wpkh({ hash: base.hash }), base)
+  u.equate(t, p2wpkh({ output: base.output }), base)
+  t.end()
 })
 
 tape('derives both', (t) => {
-  let keyPair = ECPair.fromWIF('KxJknBSZjp9WwnrgkvfG1zpHtuEqRjcnsr9RFpxWnk2GNJbkGe42')
-  let pubkey = keyPair.getPublicKeyBuffer()
-  let signature = keyPair.sign(Buffer.alloc(32)).toScriptSignature(0x01)
-  let result1 = p2wpkh({ pubkey, signature })
+  let base = p2wpkh({ pubkey: u.PUBKEY, signature: u.SIGNATURE })
+  u.equate(t, base, {
+    address: 'bc1qcv905k9wqeemqzj9khqhml6xxduq79qqy745vn',
+    hash: 'c30afa58ae0673b00a45b5c17dff4633780f1400',
+    output: '0014c30afa58ae0673b00a45b5c17dff4633780f1400',
+    pubkey: u.PUBKEY,
+    signature: u.SIGNATURE,
+    input: '',
+    witness: [
+      '3045022100e4fce9ec72b609a2df1dc050c20dcf101d27faefb3e686b7a4cb067becdd5e8e022071287fced53806b08cf39b5ad58bbe614775b3776e98a9f8760af0d4d1d47a9501',
+      '03e15819590382a9dd878f01e2f0cbce541564eb415e43b440472d883ecd283058'
+    ]
+  })
 
-  t.plan(9)
-  t.same(result1.output.toString('hex'), '0014c30afa58ae0673b00a45b5c17dff4633780f1400')
-  t.same(result1.input.toString('hex'), '')
-  t.same(result1.witness.length, 2)
-  t.same(result1.witness[0].toString('hex'), '304402203f016fdb065b990a23f6b5735e2ef848e587861f620500ce35a2289da08a8c2802204ab76634cb4ca9646908941690272ce4115d54e78e0584008ec90f624c3cdd2301')
-  t.same(result1.witness[1].toString('hex'), '03e15819590382a9dd878f01e2f0cbce541564eb415e43b440472d883ecd283058')
-  t.same(result1.pubkey.toString('hex'), '03e15819590382a9dd878f01e2f0cbce541564eb415e43b440472d883ecd283058')
-  t.same(result1.signature.toString('hex'), '304402203f016fdb065b990a23f6b5735e2ef848e587861f620500ce35a2289da08a8c2802204ab76634cb4ca9646908941690272ce4115d54e78e0584008ec90f624c3cdd2301')
-  t.same(result1.address, 'bc1qcv905k9wqeemqzj9khqhml6xxduq79qqy745vn')
-  t.same(result1.hash.toString('hex'), 'c30afa58ae0673b00a45b5c17dff4633780f1400')
+  // derives from witness
+  t.same(p2wpkh({ witness: base.witness }), base)
+
+  t.end()
 })
