@@ -58,34 +58,17 @@ tape('derives input and output', (t) => {
   })
 
   // derives with output and signatures
-  let derived = p2ms({ output: base.output, signatures: base.signatures })
-  u.equate(t, derived, {
-    m: 2,
-    n: 3,
-    output: '522103e15819590382a9dd878f01e2f0cbce541564eb415e43b440472d883ecd283058210310ca07a66272760b08e611004b30f87fa5a25798b5803df68fc81d86e4d19fc42102eab44de9d1834ce26a690e32e7247ec9beaa9c3e0afa9cc92c7160c06201ecfa53ae',
-    pubkeys: u.PUBKEYS3,
-    signatures: u.SIGNATURES2,
-    input: '0047304402203ca2d4a92e210f9467384ea867d8a9931503266747d6bdc7d3dbd51fd73aadbd022071534d8e65358333bfa92b2bb1f8d3d148084ab03c8142e67cc2e3f989e4525a0147304402206a32818921cfeb9d4780bc0919a6914c8c79fd7db67792e0f6e7a36ac00b3f6202203c4896942ab2993d03d037dc35e208c8f22af1109d7abf25f31c7abc268e323701',
-    witness: undefined
-  })
+  t.same(p2ms({ output: base.output, signatures: base.signatures }), base)
 
   // derives from output/input
-  let derived2 = p2ms({ output: base.output, input: base.input })
-  u.equate(t, derived2, {
-    m: 2,
-    n: 3,
-    pubkeys: u.PUBKEYS3, // contextual, derived
-    signatures: u.SIGNATURES2 // contextual, derived
-  })
+  t.same(p2ms({ output: base.output, input: base.input }), base)
 
   // derives, even if incomplete
-  let derived2b = p2ms({
+  u.equate(t, p2ms({
     output: base.output,
     input: u.P2MS_S_INPUT_INCOMPLETE,
     allowIncomplete: true
-  })
-
-  u.equate(t, derived2b, {
+  }), {
     m: 2,
     n: 3,
     pubkeys: u.PUBKEYS3, // contextual, derived
