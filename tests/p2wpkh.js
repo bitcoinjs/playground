@@ -21,9 +21,20 @@ tape('derives output only', (t) => {
     input: undefined,
     witness: undefined
   })
-  u.equate(t, p2wpkh({ address: base.address }), base)
-  u.equate(t, p2wpkh({ hash: base.hash }), base)
-  u.equate(t, p2wpkh({ output: base.output }), base)
+  t.same(p2wpkh({ address: base.address }), base)
+  t.same(p2wpkh({ hash: base.hash }), base)
+  t.same(p2wpkh({ output: base.output }), base)
+
+  let base2 = p2wpkh({ pubkey: u.PUBKEY })
+  u.equate(t, base2, {
+    address: 'bc1qcv905k9wqeemqzj9khqhml6xxduq79qqy745vn',
+    hash: 'c30afa58ae0673b00a45b5c17dff4633780f1400',
+    output: '0014c30afa58ae0673b00a45b5c17dff4633780f1400',
+    pubkey: u.PUBKEY,
+    signature: undefined,
+    input: undefined,
+    witness: undefined
+  })
   t.end()
 })
 

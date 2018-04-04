@@ -37,8 +37,8 @@ function p2pkh (a) {
     return baddress.toBase58Check(o.hash, network.pubKeyHash)
   })
   lazyprop(o, 'hash', function () {
-    if (a.output) return a.output.slice(1, 21)
-    if (a.address) return baddress.fromBase58Check(a.address, network.pubKeyHash).hash
+    if (a.output) return a.output.slice(3, 23)
+    if (a.address) return baddress.fromBase58Check(a.address).hash
     if (o.pubkey) return bcrypto.hash160(o.pubkey)
   })
   lazyprop(o, 'output', function () {
@@ -72,7 +72,7 @@ function p2pkh (a) {
 
   // validation
   if (a.address) {
-    let decode = baddress.fromBase58Check(a.address, network.pubKeyHash)
+    let decode = baddress.fromBase58Check(a.address)
     if (network.pubKeyHash !== decode.version) throw new TypeError('Network mismatch')
     if (a.hash && !a.hash.equals(decode.hash)) throw new TypeError('Hash mismatch')
     o.hash = decode.hash

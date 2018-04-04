@@ -29,8 +29,8 @@ function equate (t, a, b) {
 
   // contextual
   if ('hash' in b) t.same(tryHex(a.hash), tryHex(b.hash), 'Same hash(output)')
-  if ('pubkey' in b) t.same(tryMapHex(a.pubkey), tryMapHex(b.pubkey), 'Same pubkeys')
-  if ('signature' in b) t.same(tryHex(a.signature), tryHex(b.signature), 'Same signatures')
+  if ('pubkey' in b) t.same(tryMapHex(a.pubkey), tryMapHex(b.pubkey), 'Same pubkey')
+  if ('signature' in b) t.same(tryHex(a.signature), tryHex(b.signature), 'Same signature')
   if ('m' in b) t.same(a.m, b.m, 'Same m')
   if ('n' in b) t.same(a.n, b.n, 'Same n')
   if ('pubkeys' in b) t.same(tryMapHex(a.pubkeys), tryMapHex(b.pubkeys), 'Same pubkeys')

@@ -10,34 +10,47 @@ tape('throws with not enough data', (t) => {
 })
 
 tape('derives output only', (t) => {
-  let base = p2pkh({ pubkey: u.PUBKEY })
-
+  let base = p2pkh({ hash: u.HASH20 })
   u.equate(t, base, {
-    address: '',
-    hash: '',
-    output: '',
+    address: '16Jswqk47s9PUcyCc88MMVwzgvHPvtEpf',
+    hash: '0101010101010101010101010101010101010101',
+    output: '76a914010101010101010101010101010101010101010188ac',
+    pubkey: undefined,
+    signature: undefined,
+    input: undefined,
+    witness: undefined
+  })
+  t.same(p2pkh({ address: base.address }), base)
+  t.same(p2pkh({ hash: base.hash }), base)
+  t.same(p2pkh({ output: base.output }), base)
+
+  let base2 = p2pkh({ pubkey: u.PUBKEY })
+  u.equate(t, base2, {
+    address: '1JnHvAd2m9YqykjpF11a4y59hpt5KoqRmn',
+    hash: 'c30afa58ae0673b00a45b5c17dff4633780f1400',
+    output: '76a914c30afa58ae0673b00a45b5c17dff4633780f140088ac',
     pubkey: u.PUBKEY,
     signature: undefined,
     input: undefined,
     witness: undefined
   })
-  u.equate(t, p2pkh({ address: base.address }), base)
-  u.equate(t, p2pkh({ hash: base.hash }), base)
-  u.equate(t, p2pkh({ output: base.output }), base)
+  t.end()
 })
 
-tape('derives both', (t) => {
-  let keyPair = ECPair.fromWIF('KxJknBSZjp9WwnrgkvfG1zpHtuEqRjcnsr9RFpxWnk2GNJbkGe42')
-  let pubkey = keyPair.getPublicKeyBuffer()
-  let signature = keyPair.sign(Buffer.alloc(32)).toScriptSignature(0x01)
-  let result1 = p2pkh({ pubkey, signature })
+tape('derives from input', (t) => {
+  let base = p2pkh({ pubkey: u.PUBKEY, signature: u.SIGNATURE })
+  u.equate(t, base, {
+    address: '1JnHvAd2m9YqykjpF11a4y59hpt5KoqRmn',
+    hash: 'c30afa58ae0673b00a45b5c17dff4633780f1400',
+    output: '76a914c30afa58ae0673b00a45b5c17dff4633780f140088ac',
+    pubkey: u.PUBKEY,
+    signature: u.SIGNATURE,
+    input: '483045022100e4fce9ec72b609a2df1dc050c20dcf101d27faefb3e686b7a4cb067becdd5e8e022071287fced53806b08cf39b5ad58bbe614775b3776e98a9f8760af0d4d1d47a95012103e15819590382a9dd878f01e2f0cbce541564eb415e43b440472d883ecd283058',
+    witness: undefined
+  })
 
-  t.plan(7)
-  t.same(result1.output.toString('hex'), '76a914c30afa58ae0673b00a45b5c17dff4633780f140088ac')
-  t.same(result1.input.toString('hex'), '47304402203f016fdb065b990a23f6b5735e2ef848e587861f620500ce35a2289da08a8c2802204ab76634cb4ca9646908941690272ce4115d54e78e0584008ec90f624c3cdd23012103e15819590382a9dd878f01e2f0cbce541564eb415e43b440472d883ecd283058')
-  t.same(result1.witness, undefined)
-  t.same(result1.pubkey, pubkey)
-  t.same(result1.signature, signature)
-  t.same(result1.address, '1JnHvAd2m9YqykjpF11a4y59hpt5KoqRmn')
-  t.same(result1.hash.toString('hex'), 'c30afa58ae0673b00a45b5c17dff4633780f1400')
+  // derives from input
+  t.same(p2pkh({ input: base.input }), base)
+
+  t.end()
 })
