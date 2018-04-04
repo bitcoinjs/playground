@@ -9,32 +9,35 @@ let p2pkh = require('../p2pkh')
 let p2sh = require('../p2sh')
 let p2wpkh = require('../p2wpkh')
 
-function tryHex (x) { return Buffer.isBuffer(x) ? x.toString('hex') : x }
-function tryMapHex (x) { return Array.isArray(x) ? x.map(tryHex) : x }
+function tryHex (x) {
+  if (Buffer.isBuffer(x)) return x.toString('hex')
+  if (Array.isArray(x)) return x.map(tryHex)
+  return x
+}
 function equate (t, a, b) {
   if ('address' in b) t.same(a.address, b.address, 'Same address')
   if ('output' in b) t.same(tryHex(a.output), tryHex(b.output), 'Same output')
   if ('input' in b) t.same(tryHex(a.input), tryHex(b.input), 'Same input')
   if ('witness' in b) {
-    t.same(tryMapHex(a.witness), tryMapHex(b.witness), 'Same witness')
+    t.same(tryHex(a.witness), tryHex(b.witness), 'Same witness')
   }
   if (b.network) t.equal(a.network, b.network)
   if (b.redeem) {
     if ('output' in b.redeem) t.same(tryHex(a.redeem.output), tryHex(b.redeem.output), 'Same redeem output')
     if ('input' in b.redeem) t.same(tryHex(a.redeem.input), tryHex(b.redeem.input), 'Same redeem input')
     if ('witness' in b.redeem) {
-      t.same(tryMapHex(a.redeem.witness), tryMapHex(b.redeem.witness), 'Same redeem witness')
+      t.same(tryHex(a.redeem.witness), tryHex(b.redeem.witness), 'Same redeem witness')
     }
   }
 
   // contextual
   if ('hash' in b) t.same(tryHex(a.hash), tryHex(b.hash), 'Same hash(output)')
-  if ('pubkey' in b) t.same(tryMapHex(a.pubkey), tryMapHex(b.pubkey), 'Same pubkey')
+  if ('pubkey' in b) t.same(tryHex(a.pubkey), tryHex(b.pubkey), 'Same pubkey')
   if ('signature' in b) t.same(tryHex(a.signature), tryHex(b.signature), 'Same signature')
   if ('m' in b) t.same(a.m, b.m, 'Same m')
   if ('n' in b) t.same(a.n, b.n, 'Same n')
-  if ('pubkeys' in b) t.same(tryMapHex(a.pubkeys), tryMapHex(b.pubkeys), 'Same pubkeys')
-  if ('signatures' in b) t.same(tryMapHex(a.signatures), tryMapHex(b.signatures), 'Same signatures')
+  if ('pubkeys' in b) t.same(tryHex(a.pubkeys), tryHex(b.pubkeys), 'Same pubkeys')
+  if ('signatures' in b) t.same(tryHex(a.signatures), tryHex(b.signatures), 'Same signatures')
 }
 
 // useful constants
