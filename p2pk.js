@@ -34,7 +34,7 @@ function p2pk (a) {
   })
   lazyprop(o, 'pubkey', function () {
     if (!a.output) return
-    return a.output.slice(0, -1)
+    return bscript.decompile(a.output)[0]
   })
   lazyprop(o, 'signature', function () {
     if (!a.input) return

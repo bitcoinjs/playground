@@ -68,8 +68,8 @@ let P2MS_S_EXAMPLE = p2ms({
   pubkeys: PUBKEYS3,
   signatures: SIGNATURES2
 })
-let P2MS_S_SIGNATURES_INCOMPLETE = [OPS.OP_0, OPS.OP_0, signature]
-let P2MS_S_INPUT_INCOMPLETE = script.compile(P2MS_S_SIGNATURES_INCOMPLETE)
+let P2MS_S_SIGNATURES_INCOMPLETE = [OPS.OP_0, signature]
+let P2MS_S_INPUT_INCOMPLETE = script.compile([OPS.OP_0].concat(P2MS_S_SIGNATURES_INCOMPLETE))
 let P2PKH_EXAMPLE = p2pkh({ pubkey })
 let P2PKH_S_EXAMPLE = p2pkh({ pubkey, signature })
 let P2PK_EXAMPLE = p2pk({ pubkey })
@@ -81,6 +81,7 @@ let P2WPKH_S_EXAMPLE = p2wpkh({ pubkey, signature })
 module.exports = {
   HASH20,
   HASH32,
+  PUBKEY: pubkey,
   PUBKEYS2,
   PUBKEYS3,
   SIGNATURE: signature,

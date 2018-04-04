@@ -1,6 +1,6 @@
-let { ECPair } = require('bitcoinjs-lib')
 let tape = require('tape')
 let p2pkh = require('../p2pkh')
+let u = require('./util')
 
 tape('throws with not enough data', (t) => {
   t.plan(1)
@@ -10,18 +10,20 @@ tape('throws with not enough data', (t) => {
 })
 
 tape('derives output only', (t) => {
-  let keyPair = ECPair.fromWIF('KxJknBSZjp9WwnrgkvfG1zpHtuEqRjcnsr9RFpxWnk2GNJbkGe42')
-  let pubkey = keyPair.getPublicKeyBuffer()
-  let result1 = p2pkh({ pubkey })
+  let base = p2pkh({ pubkey: u.PUBKEY })
 
-  t.plan(7)
-  t.same(result1.output.toString('hex'), '76a914c30afa58ae0673b00a45b5c17dff4633780f140088ac')
-  t.same(result1.input, undefined)
-  t.same(result1.witness, undefined)
-  t.same(result1.pubkey, pubkey)
-  t.same(result1.signature, undefined)
-  t.same(result1.address, '1JnHvAd2m9YqykjpF11a4y59hpt5KoqRmn')
-  t.same(result1.hash.toString('hex'), 'c30afa58ae0673b00a45b5c17dff4633780f1400')
+  u.equate(t, base, {
+    address: '',
+    hash: '',
+    output: '',
+    pubkey: u.PUBKEY,
+    signature: undefined,
+    input: undefined,
+    witness: undefined
+  })
+  u.equate(t, p2pkh({ address: base.address }), base)
+  u.equate(t, p2pkh({ hash: base.hash }), base)
+  u.equate(t, p2pkh({ output: base.output }), base)
 })
 
 tape('derives both', (t) => {

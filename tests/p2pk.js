@@ -1,43 +1,12 @@
-let { ECPair } = require('bitcoinjs-lib')
 let tape = require('tape')
 let p2pk = require('../p2pk')
+let u = require('./util')
 
-tape('throws with not enough data', (t) => {
-  t.plan(1)
+tape('throws with not enough, or bad data', (t) => {
   t.throws(() => {
     p2pk({})
   }, /Not enough data/)
-})
 
-tape('derives output only', (t) => {
-  let keyPair = ECPair.fromWIF('KxJknBSZjp9WwnrgkvfG1zpHtuEqRjcnsr9RFpxWnk2GNJbkGe42')
-  let pubkey = keyPair.getPublicKeyBuffer()
-  let result1 = p2pk({ pubkey })
-
-  t.plan(5)
-  t.same(result1.output.toString('hex'), '2103e15819590382a9dd878f01e2f0cbce541564eb415e43b440472d883ecd283058ac')
-  t.same(result1.input, undefined)
-  t.same(result1.witness, undefined)
-  t.same(result1.pubkey, pubkey)
-  t.same(result1.signature, undefined)
-})
-
-tape('derives both', (t) => {
-  let keyPair = ECPair.fromWIF('KxJknBSZjp9WwnrgkvfG1zpHtuEqRjcnsr9RFpxWnk2GNJbkGe42')
-  let pubkey = keyPair.getPublicKeyBuffer()
-  let signature = keyPair.sign(Buffer.alloc(32)).toScriptSignature(0x01)
-  let result1 = p2pk({ pubkey, signature })
-
-  t.plan(5)
-  t.same(result1.output.toString('hex'), '2103e15819590382a9dd878f01e2f0cbce541564eb415e43b440472d883ecd283058ac')
-  t.same(result1.input.toString('hex'), '47304402203f016fdb065b990a23f6b5735e2ef848e587861f620500ce35a2289da08a8c2802204ab76634cb4ca9646908941690272ce4115d54e78e0584008ec90f624c3cdd2301')
-  t.same(result1.witness, undefined)
-  t.same(result1.pubkey, pubkey)
-  t.same(result1.signature, signature)
-})
-
-tape('throws with bad data', (t) => {
-  t.plan(2)
   t.throws(() => {
     p2pk({
       output: Buffer.from('ff00', 'hex')
@@ -49,4 +18,36 @@ tape('throws with bad data', (t) => {
       output: Buffer.from('ffac', 'hex')
     })
   }, /Output pubkey is invalid/)
+
+  t.end()
+})
+
+tape('derives output only', (t) => {
+  let base = p2pk({ pubkey: u.PUBKEY })
+  u.equate(t, base, {
+    address: undefined, // p2pk has no address
+    output: '2103e15819590382a9dd878f01e2f0cbce541564eb415e43b440472d883ecd283058ac',
+    pubkey: u.PUBKEY,
+    signature: undefined,
+    input: undefined,
+    witness: undefined
+  })
+
+  t.same(p2pk({ output: base.output }), base)
+  t.end()
+})
+
+tape('derives from input and output', (t) => {
+  let base = p2pk({ pubkey: u.PUBKEY, signature: u.SIGNATURE })
+  u.equate(t, base, {
+    address: undefined, // p2pk has no address
+    output: '2103e15819590382a9dd878f01e2f0cbce541564eb415e43b440472d883ecd283058ac',
+    pubkey: u.PUBKEY,
+    signature: '3045022100e4fce9ec72b609a2df1dc050c20dcf101d27faefb3e686b7a4cb067becdd5e8e022071287fced53806b08cf39b5ad58bbe614775b3776e98a9f8760af0d4d1d47a9501',
+    input: '483045022100e4fce9ec72b609a2df1dc050c20dcf101d27faefb3e686b7a4cb067becdd5e8e022071287fced53806b08cf39b5ad58bbe614775b3776e98a9f8760af0d4d1d47a9501',
+    witness: undefined
+  })
+
+  t.same(p2pk({ output: base.output, input: base.input }), base)
+  t.end()
 })
