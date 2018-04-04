@@ -9,24 +9,15 @@ tape('throws with not enough data', (t) => {
   }, /Not enough data/)
 })
 
-tape('derives output', (t) => {
-  u.equate(t, p2sh({ address: '31nKoVLBc2BXUeKQKhnimyrt9DD12VwG6p' }), {
+tape('derives from output', (t) => {
+  let base = p2sh({ address: '31nKoVLBc2BXUeKQKhnimyrt9DD12VwG6p' })
+  u.equate(t, base, {
     address: '31nKoVLBc2BXUeKQKhnimyrt9DD12VwG6p',
     output: 'a914010101010101010101010101010101010101010187',
     hash: '0101010101010101010101010101010101010101'
   })
-
-  u.equate(t, p2sh({ hash: u.HASH20 }), {
-    address: '31nKoVLBc2BXUeKQKhnimyrt9DD12VwG6p',
-    output: 'a914010101010101010101010101010101010101010187',
-    hash: '0101010101010101010101010101010101010101'
-  })
-
-  u.equate(t, p2sh({ output: u.P2SH_EXAMPLE.output }), {
-    address: '31nKoVLBc2BXUeKQKhnimyrt9DD12VwG6p',
-    output: 'a914010101010101010101010101010101010101010187',
-    hash: '0101010101010101010101010101010101010101'
-  })
+  t.same(p2sh({ hash: u.HASH20 }), base)
+  t.same(p2sh({ output: Buffer.from('a914010101010101010101010101010101010101010187u', 'hex') }), base)
 
   u.equate(t, p2sh({ redeem: u.P2PKH_EXAMPLE }), {
     address: '3GETYP4cuSesh2zsPEEYVZqnRedwe4FwUT',
@@ -139,7 +130,7 @@ tape('derives both, and can be self-derived', (t) => {
   t.end()
 })
 
-tape('handles witness, incl. minimalist derivation', (t) => {
+tape('handles witness, redeem derivation', (t) => {
   // P2SH ( P2WPKH ) - signed
   let base = p2sh({ redeem: u.P2WPKH_S_EXAMPLE })
 
