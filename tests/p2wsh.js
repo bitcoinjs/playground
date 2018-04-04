@@ -1,192 +1,107 @@
-let {
-  ECPair
-} = require('bitcoinjs-lib')
-let tape = require('tape')
-let p2ms = require('../p2ms')
-let p2pk = require('../p2pk')
-let p2pkh = require('../p2pkh')
-let p2sh = require('../p2sh')
-let p2wpkh = require('../p2wpkh')
 let p2wsh = require('../p2wsh')
-let EMPTY_BUFFER = Buffer.alloc(0)
-
-let keyPair = ECPair.fromWIF('KxJknBSZjp9WwnrgkvfG1zpHtuEqRjcnsr9RFpxWnk2GNJbkGe42')
-let pubkey = keyPair.getPublicKeyBuffer()
-let signature = keyPair.sign(Buffer.alloc(32)).toScriptSignature(0x01)
-let hash = Buffer.alloc(32, 0x01)
+let tape = require('tape')
+let u = require('./util')
 
 tape('throws with not enough data', (t) => {
   t.plan(1)
   t.throws(() => {
-    p2sh({})
+    p2wsh({})
   }, /Not enough data/)
 })
 
-tape('derives output only', (t) => {
-  let result1 = p2wsh({ hash })
-  t.same(result1.address, 'bc1qqyqszqgpqyqszqgpqyqszqgpqyqszqgpqyqszqgpqyqszqgpqyqsw9e2a9')
-  t.same(result1.output.toString('hex'), '00200101010101010101010101010101010101010101010101010101010101010101')
-  t.same(result1.hash.toString('hex'), '0101010101010101010101010101010101010101010101010101010101010101')
+tape('derives from output', (t) => {
+  let base = p2wsh({ address: 'bc1qqyqszqgpqyqszqgpqyqszqgpqyqszqgpqyqszqgpqyqszqgpqyqsw9e2a9' })
+  u.equate(t, base, {
+    address: 'bc1qqyqszqgpqyqszqgpqyqszqgpqyqszqgpqyqszqgpqyqszqgpqyqsw9e2a9',
+    output: '00200101010101010101010101010101010101010101010101010101010101010101',
+    hash: '0101010101010101010101010101010101010101010101010101010101010101'
+  })
+  t.same(p2wsh({ hash: base.hash }), base)
+  t.same(p2wsh({ output: base.output }), base)
 
-  let result2 = p2wsh({ redeem: p2pkh({ pubkey }) })
+  u.equate(t, p2wsh({ redeem: u.P2PKH_EXAMPLE }), {
+    address: 'bc1qusxlgq9quu27ucxs7a2fg8nv0pycdzvxsjk9npyupupxw3y892ss2cq5ar',
+    hash: 'e40df400a0e715ee60d0f754941e6c784986898684ac59849c0f026744872aa1',
+    output: '0020e40df400a0e715ee60d0f754941e6c784986898684ac59849c0f026744872aa1',
+    redeem: u.P2PKH_EXAMPLE
+  })
 
-  t.same(result2.address, 'bc1qusxlgq9quu27ucxs7a2fg8nv0pycdzvxsjk9npyupupxw3y892ss2cq5ar')
-  t.same(result2.redeem.address, '1JnHvAd2m9YqykjpF11a4y59hpt5KoqRmn')
-  t.same(result2.redeem.hash.toString('hex'), 'c30afa58ae0673b00a45b5c17dff4633780f1400')
-  t.same(result2.redeem.output.toString('hex'), '76a914c30afa58ae0673b00a45b5c17dff4633780f140088ac')
-  t.same(result2.redeem.pubkey.toString('hex'), '03e15819590382a9dd878f01e2f0cbce541564eb415e43b440472d883ecd283058')
+  u.equate(t, p2wsh({ redeem: u.P2WPKH_EXAMPLE }), {
+    address: 'bc1qpsl7el8wcx22f3fpdt3lm2wmzug7yyx2q3n8wzgtf37kps9tqy7skc7m3e',
+    hash: '0c3fecfceec194a4c5216ae3fda9db1711e210ca046677090b4c7d60c0ab013d',
+    output: '00200c3fecfceec194a4c5216ae3fda9db1711e210ca046677090b4c7d60c0ab013d',
+    redeem: u.P2WPKH_EXAMPLE
+  })
 
-  let result3 = p2wsh({ redeem: p2wpkh({ pubkey }) })
-  t.same(result3.address, 'bc1qpsl7el8wcx22f3fpdt3lm2wmzug7yyx2q3n8wzgtf37kps9tqy7skc7m3e')
-  t.same(result3.redeem.address, 'bc1qcv905k9wqeemqzj9khqhml6xxduq79qqy745vn')
-  t.same(result3.redeem.hash.toString('hex'), 'c30afa58ae0673b00a45b5c17dff4633780f1400')
-  t.same(result3.redeem.output.toString('hex'), '0014c30afa58ae0673b00a45b5c17dff4633780f1400')
-  t.same(result3.redeem.pubkey.toString('hex'), '03e15819590382a9dd878f01e2f0cbce541564eb415e43b440472d883ecd283058')
-
-  let result4 = p2wsh({ redeem: p2pk({ pubkey }) })
-  t.same(result4.redeem.output.toString('hex'), '2103e15819590382a9dd878f01e2f0cbce541564eb415e43b440472d883ecd283058ac')
-  t.same(result4.redeem.pubkey.toString('hex'), '03e15819590382a9dd878f01e2f0cbce541564eb415e43b440472d883ecd283058')
-  t.same(result4.address, 'bc1q6rgl33d3s9dugudw7n68yrryajkr3ha9q8q24j20zs62se4q9tsqdy0t2q')
-  t.end()
-})
-
-tape('derives both', (t) => {
-  let result1 = p2wsh({ redeem: p2pkh({ pubkey, signature }) })
-  t.same(result1.address, 'bc1qusxlgq9quu27ucxs7a2fg8nv0pycdzvxsjk9npyupupxw3y892ss2cq5ar')
-  t.same(result1.redeem.address, '1JnHvAd2m9YqykjpF11a4y59hpt5KoqRmn')
-  t.same(result1.redeem.hash.toString('hex'), 'c30afa58ae0673b00a45b5c17dff4633780f1400')
-  t.same(result1.redeem.output.toString('hex'), '76a914c30afa58ae0673b00a45b5c17dff4633780f140088ac')
-  t.same(result1.redeem.pubkey.toString('hex'), '03e15819590382a9dd878f01e2f0cbce541564eb415e43b440472d883ecd283058')
-  t.same(result1.input.toString('hex'), '')
-  t.same(result1.witness.length, 3)
-  t.same(result1.witness[0].toString('hex'), '304402203f016fdb065b990a23f6b5735e2ef848e587861f620500ce35a2289da08a8c2802204ab76634cb4ca9646908941690272ce4115d54e78e0584008ec90f624c3cdd2301')
-  t.same(result1.witness[1].toString('hex'), '03e15819590382a9dd878f01e2f0cbce541564eb415e43b440472d883ecd283058')
-  t.same(result1.witness[2].toString('hex'), '76a914c30afa58ae0673b00a45b5c17dff4633780f140088ac')
-
-  // derives everything relevant
-  let result1b = p2wsh({ witness: result1.witness })
-  t.same(result1b.address, result1.address)
-  t.same(result1b.input, result1.input)
-  t.same(result1b.output, result1.output)
-  t.same(result1b.redeem.input, result1.redeem.input)
-  t.same(result1b.redeem.output, result1.redeem.output)
-  t.same(result1b.redeem.witness, result1.redeem.witness)
-  t.same(result1b.input, result1.input)
-  t.same(result1b.witness, result1.witness)
-
-  let result2 = p2wsh({ redeem: p2wpkh({ pubkey, signature }) })
-  t.same(result2.address, 'bc1qpsl7el8wcx22f3fpdt3lm2wmzug7yyx2q3n8wzgtf37kps9tqy7skc7m3e')
-  t.same(result2.redeem.address, 'bc1qcv905k9wqeemqzj9khqhml6xxduq79qqy745vn')
-  t.same(result2.redeem.hash.toString('hex'), 'c30afa58ae0673b00a45b5c17dff4633780f1400')
-  t.same(result2.redeem.input.toString('hex'), '') // defined! as p2wpkh is a valid witness encoded redeem!
-  t.same(result2.redeem.output.toString('hex'), '0014c30afa58ae0673b00a45b5c17dff4633780f1400')
-  t.same(result2.redeem.pubkey.toString('hex'), '03e15819590382a9dd878f01e2f0cbce541564eb415e43b440472d883ecd283058')
-  t.same(result2.witness.length, 3)
-  t.same(result2.witness[0].toString('hex'), '304402203f016fdb065b990a23f6b5735e2ef848e587861f620500ce35a2289da08a8c2802204ab76634cb4ca9646908941690272ce4115d54e78e0584008ec90f624c3cdd2301')
-  t.same(result2.witness[1].toString('hex'), '03e15819590382a9dd878f01e2f0cbce541564eb415e43b440472d883ecd283058')
-  t.same(result2.witness[2].toString('hex'), '0014c30afa58ae0673b00a45b5c17dff4633780f1400')
-
-  let result3 = p2wsh({ redeem: p2pkh({ pubkey, signature }) })
-  t.same(result3.address, 'bc1qusxlgq9quu27ucxs7a2fg8nv0pycdzvxsjk9npyupupxw3y892ss2cq5ar')
-  t.same(result3.input, EMPTY_BUFFER)
-  t.same(result3.redeem.address, '1JnHvAd2m9YqykjpF11a4y59hpt5KoqRmn')
-  t.same(result3.redeem.hash.toString('hex'), 'c30afa58ae0673b00a45b5c17dff4633780f1400')
-  t.same(result3.redeem.input, undefined)
-  t.same(result3.redeem.output.toString('hex'), '76a914c30afa58ae0673b00a45b5c17dff4633780f140088ac')
-  t.same(result3.redeem.pubkey.toString('hex'), '03e15819590382a9dd878f01e2f0cbce541564eb415e43b440472d883ecd283058')
-  t.same(result3.redeem.witness.length, 2)
-  t.same(result3.redeem.witness[0].toString('hex'), '304402203f016fdb065b990a23f6b5735e2ef848e587861f620500ce35a2289da08a8c2802204ab76634cb4ca9646908941690272ce4115d54e78e0584008ec90f624c3cdd2301')
-  t.same(result3.redeem.witness[1].toString('hex'), '03e15819590382a9dd878f01e2f0cbce541564eb415e43b440472d883ecd283058')
-  t.same(result3.witness.length, 3)
-  t.same(result3.witness[0].toString('hex'), '304402203f016fdb065b990a23f6b5735e2ef848e587861f620500ce35a2289da08a8c2802204ab76634cb4ca9646908941690272ce4115d54e78e0584008ec90f624c3cdd2301')
-  t.same(result3.witness[1].toString('hex'), '03e15819590382a9dd878f01e2f0cbce541564eb415e43b440472d883ecd283058')
-  t.same(result3.witness[2].toString('hex'), '76a914c30afa58ae0673b00a45b5c17dff4633780f140088ac')
-
-  // derives everything relevant
-  let result3b = p2wsh({ witness: result3.witness })
-  t.same(result3b.address, result3.address)
-  t.same(result3b.input, result3.input)
-  t.same(result3b.output, result3.output)
-  t.same(result3b.redeem.input, undefined) // different! we transformed redeem.input to a witness stack
-  t.same(result3b.redeem.witness.length, 2)
-  t.same(result3b.redeem.witness[0].toString('hex'), '304402203f016fdb065b990a23f6b5735e2ef848e587861f620500ce35a2289da08a8c2802204ab76634cb4ca9646908941690272ce4115d54e78e0584008ec90f624c3cdd2301')
-  t.same(result3b.redeem.witness[1].toString('hex'), '03e15819590382a9dd878f01e2f0cbce541564eb415e43b440472d883ecd283058')
-  t.same(result3b.witness, result3.witness)
-
-  let result4 = p2wsh({ redeem: p2wpkh({ pubkey, signature }) })
-  t.same(result4.address, 'bc1qpsl7el8wcx22f3fpdt3lm2wmzug7yyx2q3n8wzgtf37kps9tqy7skc7m3e')
-  t.same(result4.input, EMPTY_BUFFER)
-  t.same(result4.redeem.address, 'bc1qcv905k9wqeemqzj9khqhml6xxduq79qqy745vn')
-  t.same(result4.redeem.hash.toString('hex'), 'c30afa58ae0673b00a45b5c17dff4633780f1400')
-  t.same(result4.redeem.input.toString('hex'), '') // defined! as p2wpkh is a valid witness encoded redeem!
-  t.same(result4.redeem.output.toString('hex'), '0014c30afa58ae0673b00a45b5c17dff4633780f1400')
-  t.same(result4.redeem.pubkey.toString('hex'), '03e15819590382a9dd878f01e2f0cbce541564eb415e43b440472d883ecd283058')
-  t.same(result4.witness.length, 3)
-  t.same(result4.witness[0].toString('hex'), '304402203f016fdb065b990a23f6b5735e2ef848e587861f620500ce35a2289da08a8c2802204ab76634cb4ca9646908941690272ce4115d54e78e0584008ec90f624c3cdd2301')
-  t.same(result4.witness[1].toString('hex'), '03e15819590382a9dd878f01e2f0cbce541564eb415e43b440472d883ecd283058')
-  t.same(result4.witness[2].toString('hex'), '0014c30afa58ae0673b00a45b5c17dff4633780f1400')
-
-  let result4b = p2wsh({ witness: result4.witness })
-  t.same(result4b.address, 'bc1qpsl7el8wcx22f3fpdt3lm2wmzug7yyx2q3n8wzgtf37kps9tqy7skc7m3e')
-  t.same(result4b.input, result4.input)
-  t.same(result4b.redeem.input, undefined)
-  t.same(result4b.redeem.output.toString('hex'), '0014c30afa58ae0673b00a45b5c17dff4633780f1400')
-  t.same(result4b.redeem.witness.length, 2)
-  t.same(result4b.redeem.witness[0].toString('hex'), '304402203f016fdb065b990a23f6b5735e2ef848e587861f620500ce35a2289da08a8c2802204ab76634cb4ca9646908941690272ce4115d54e78e0584008ec90f624c3cdd2301')
-  t.same(result4b.redeem.witness[1].toString('hex'), '03e15819590382a9dd878f01e2f0cbce541564eb415e43b440472d883ecd283058')
-  t.same(result4b.witness, result4.witness)
-
-  let result5 = p2wsh({ output: result4b.output })
-  t.same(result5.address, 'bc1qpsl7el8wcx22f3fpdt3lm2wmzug7yyx2q3n8wzgtf37kps9tqy7skc7m3e')
-
-  let result6 = p2wsh({ redeem: p2ms({ m: 2, pubkeys: [pubkey, pubkey, pubkey, pubkey, pubkey], signatures: [signature, signature] }) })
-  t.same(result6.address, 'bc1qygxjq8c7e5atu8x6k92vsvztyu8uzfgjeu0u50xzdzqwc5huuk2szuv5ca')
-  t.same(result6.redeem.m, 2)
-  t.same(result6.redeem.n, 5)
-  t.same(result6.redeem.input, undefined)
-  t.same(result6.redeem.output.toString('hex'), '522103e15819590382a9dd878f01e2f0cbce541564eb415e43b440472d883ecd2830582103e15819590382a9dd878f01e2f0cbce541564eb415e43b440472d883ecd2830582103e15819590382a9dd878f01e2f0cbce541564eb415e43b440472d883ecd2830582103e15819590382a9dd878f01e2f0cbce541564eb415e43b440472d883ecd2830582103e15819590382a9dd878f01e2f0cbce541564eb415e43b440472d883ecd28305855ae')
-  t.same(result6.redeem.witness.length, 3)
-  t.same(result6.redeem.witness[0].toString('hex'), '') // OP_0
-  t.same(result6.redeem.witness[1].toString('hex'), '304402203f016fdb065b990a23f6b5735e2ef848e587861f620500ce35a2289da08a8c2802204ab76634cb4ca9646908941690272ce4115d54e78e0584008ec90f624c3cdd2301')
-  t.same(result6.redeem.witness[2].toString('hex'), '304402203f016fdb065b990a23f6b5735e2ef848e587861f620500ce35a2289da08a8c2802204ab76634cb4ca9646908941690272ce4115d54e78e0584008ec90f624c3cdd2301')
-  t.same(result6.input.toString('hex'), '')
-  t.same(result6.output.toString('hex'), '0020220d201f1ecd3abe1cdab154c8304b270fc12512cf1fca3cc26880ec52fce595')
-  t.same(result6.witness.length, 4)
-  t.same(result6.witness[0].toString('hex'), '') // OP_0
-  t.same(result6.witness[1].toString('hex'), '304402203f016fdb065b990a23f6b5735e2ef848e587861f620500ce35a2289da08a8c2802204ab76634cb4ca9646908941690272ce4115d54e78e0584008ec90f624c3cdd2301')
-  t.same(result6.witness[2].toString('hex'), '304402203f016fdb065b990a23f6b5735e2ef848e587861f620500ce35a2289da08a8c2802204ab76634cb4ca9646908941690272ce4115d54e78e0584008ec90f624c3cdd2301')
-  t.same(result6.witness[3].toString('hex'), '522103e15819590382a9dd878f01e2f0cbce541564eb415e43b440472d883ecd2830582103e15819590382a9dd878f01e2f0cbce541564eb415e43b440472d883ecd2830582103e15819590382a9dd878f01e2f0cbce541564eb415e43b440472d883ecd2830582103e15819590382a9dd878f01e2f0cbce541564eb415e43b440472d883ecd2830582103e15819590382a9dd878f01e2f0cbce541564eb415e43b440472d883ecd28305855ae')
+  u.equate(t, p2wsh({ redeem: u.P2PK_EXAMPLE }), {
+    address: 'bc1q6rgl33d3s9dugudw7n68yrryajkr3ha9q8q24j20zs62se4q9tsqdy0t2q',
+    hash: 'd0d1f8c5b1815bc471aef4f4720c64ecac38dfa501c0aac94f1434a866a02ae0',
+    output: '0020d0d1f8c5b1815bc471aef4f4720c64ecac38dfa501c0aac94f1434a866a02ae0',
+    redeem: u.P2PK_EXAMPLE
+  })
 
   t.end()
 })
 
-tape('supports recursion, better or worse', (t) => {
-  let keyPair = ECPair.fromWIF('KxJknBSZjp9WwnrgkvfG1zpHtuEqRjcnsr9RFpxWnk2GNJbkGe42')
-  let pubkey = keyPair.getPublicKeyBuffer()
-  let signature = keyPair.sign(Buffer.alloc(32)).toScriptSignature(0x01)
+tape('derives everything', (t) => {
+  let base = p2wsh({ redeem: u.P2WPKH_S_EXAMPLE })
+  u.equate(t, base, {
+    address: 'bc1qpsl7el8wcx22f3fpdt3lm2wmzug7yyx2q3n8wzgtf37kps9tqy7skc7m3e',
+    hash: '0c3fecfceec194a4c5216ae3fda9db1711e210ca046677090b4c7d60c0ab013d',
+    output: '00200c3fecfceec194a4c5216ae3fda9db1711e210ca046677090b4c7d60c0ab013d',
+    input: '',
+    witness: [
+      '3045022100e4fce9ec72b609a2df1dc050c20dcf101d27faefb3e686b7a4cb067becdd5e8e022071287fced53806b08cf39b5ad58bbe614775b3776e98a9f8760af0d4d1d47a9501',
+      '03e15819590382a9dd878f01e2f0cbce541564eb415e43b440472d883ecd283058',
+      '0014c30afa58ae0673b00a45b5c17dff4633780f1400'
+    ]
+  })
 
-  let result1 = p2wsh({ redeem: p2pkh({ pubkey, signature }) })
-  t.same(result1.address, 'bc1qusxlgq9quu27ucxs7a2fg8nv0pycdzvxsjk9npyupupxw3y892ss2cq5ar')
-  t.same(result1.output.toString('hex'), '0020e40df400a0e715ee60d0f754941e6c784986898684ac59849c0f026744872aa1')
-  t.same(result1.redeem.address, '1JnHvAd2m9YqykjpF11a4y59hpt5KoqRmn')
-  t.same(result1.redeem.hash.toString('hex'), 'c30afa58ae0673b00a45b5c17dff4633780f1400')
-  t.same(result1.redeem.output.toString('hex'), '76a914c30afa58ae0673b00a45b5c17dff4633780f140088ac')
-  t.same(result1.redeem.pubkey.toString('hex'), '03e15819590382a9dd878f01e2f0cbce541564eb415e43b440472d883ecd283058')
-  t.same(result1.input.toString('hex'), '')
-  t.same(result1.witness.length, 3)
-  t.same(result1.witness[0].toString('hex'), '304402203f016fdb065b990a23f6b5735e2ef848e587861f620500ce35a2289da08a8c2802204ab76634cb4ca9646908941690272ce4115d54e78e0584008ec90f624c3cdd2301')
-  t.same(result1.witness[1].toString('hex'), '03e15819590382a9dd878f01e2f0cbce541564eb415e43b440472d883ecd283058')
-  t.same(result1.witness[2].toString('hex'), '76a914c30afa58ae0673b00a45b5c17dff4633780f140088ac')
+  u.equate(t, p2wsh({ witness: base.witness }), base)
 
-  let result2 = p2wsh({ redeem: result1 })
-  t.same(result2.address, 'bc1qjq4h58fg22ty65pznrm4v9lsd2djty2qymdr725rcydxlmfd6ymqrsg8wy')
-  t.same(result2.redeem, result1)
-  t.same(result2.input.toString('hex'), '')
-  t.same(result2.witness.length, 4)
-  t.same(result2.witness[0].toString('hex'), '304402203f016fdb065b990a23f6b5735e2ef848e587861f620500ce35a2289da08a8c2802204ab76634cb4ca9646908941690272ce4115d54e78e0584008ec90f624c3cdd2301')
-  t.same(result2.witness[1].toString('hex'), '03e15819590382a9dd878f01e2f0cbce541564eb415e43b440472d883ecd283058')
-  t.same(result2.witness[2].toString('hex'), '76a914c30afa58ae0673b00a45b5c17dff4633780f140088ac')
-  t.same(result2.witness[3].toString('hex'), '0020e40df400a0e715ee60d0f754941e6c784986898684ac59849c0f026744872aa1')
+  // derives redeem input
+  let base2 = p2wsh({ redeem: u.P2PKH_S_EXAMPLE })
+  u.equate(t, base2, {
+    address: 'bc1qusxlgq9quu27ucxs7a2fg8nv0pycdzvxsjk9npyupupxw3y892ss2cq5ar',
+    hash: 'e40df400a0e715ee60d0f754941e6c784986898684ac59849c0f026744872aa1',
+    output: '0020e40df400a0e715ee60d0f754941e6c784986898684ac59849c0f026744872aa1',
+    redeem: {
+      input: '', // different! transformed to a witness stack
+      witness: [
+        '3045022100e4fce9ec72b609a2df1dc050c20dcf101d27faefb3e686b7a4cb067becdd5e8e022071287fced53806b08cf39b5ad58bbe614775b3776e98a9f8760af0d4d1d47a9501',
+        '03e15819590382a9dd878f01e2f0cbce541564eb415e43b440472d883ecd283058'
+      ]
+    },
+    input: '',
+    witness: [
+      '3045022100e4fce9ec72b609a2df1dc050c20dcf101d27faefb3e686b7a4cb067becdd5e8e022071287fced53806b08cf39b5ad58bbe614775b3776e98a9f8760af0d4d1d47a9501',
+      '03e15819590382a9dd878f01e2f0cbce541564eb415e43b440472d883ecd283058',
+      '76a914c30afa58ae0673b00a45b5c17dff4633780f140088ac'
+    ]
+  })
+
+  t.end()
+})
+
+tape('recurses... even if that will never work', (t) => {
+  let base = p2wsh({ redeem: u.P2PKH_S_EXAMPLE })
+  t.same(base.address, 'bc1qusxlgq9quu27ucxs7a2fg8nv0pycdzvxsjk9npyupupxw3y892ss2cq5ar')
+
+  let depth1 = p2wsh({ redeem: base })
+  t.same(depth1.address, 'bc1qjq4h58fg22ty65pznrm4v9lsd2djty2qymdr725rcydxlmfd6ymqrsg8wy')
+
+  let depth2 = p2wsh({ redeem: depth1 })
+  u.equate(t, depth2, {
+    address: 'bc1qeulza7498qu5ugxv7d76nnsl432sy7kyp09ajxurl5v9pmwnzafq5h93y9',
+    input: '',
+    witness: [
+      '3045022100e4fce9ec72b609a2df1dc050c20dcf101d27faefb3e686b7a4cb067becdd5e8e022071287fced53806b08cf39b5ad58bbe614775b3776e98a9f8760af0d4d1d47a9501',
+      '03e15819590382a9dd878f01e2f0cbce541564eb415e43b440472d883ecd283058',
+      '76a914c30afa58ae0673b00a45b5c17dff4633780f140088ac', // base
+      '0020e40df400a0e715ee60d0f754941e6c784986898684ac59849c0f026744872aa1', // depth1
+      '0020902b7a1d2852964d502298f75617f06a9b25914026da3f2a83c11a6fed2dd136' // depth2
+    ]
+  })
 
   t.end()
 })

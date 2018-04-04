@@ -112,7 +112,7 @@ function p2sh (a) {
   function validateRedeem (redeem) {
     if (network !== redeem.network) throw new TypeError('Network mismatch')
 
-    // is redeemScript a valid script?
+    // is the redeem output non-empty?
     if (bscript.decompile(redeem.output).length === 0) throw new TypeError('Redeem.output is invalid')
 
     // match hash against other sources
