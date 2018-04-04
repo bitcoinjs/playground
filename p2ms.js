@@ -17,11 +17,12 @@ function stacksEqual (a, b) {
 
 // input: OP_0 [signatures ...]
 // output: m [pubKeys ...] n OP_CHECKMULTISIG
-function p2ms (a) {
+function p2ms (a, opts) {
   if (
     !a.output &&
     !(a.pubkeys && a.m !== undefined)
   ) throw new TypeError('Not enough data')
+  opts = opts || { validate: true }
 
   function isAcceptableSignature (x) {
     return bscript.isCanonicalSignature(x) || (a.allowIncomplete && x === OPS.OP_0)
@@ -89,42 +90,44 @@ function p2ms (a) {
     return bscript.compile([OPS.OP_0].concat(a.signatures))
   })
 
-  // validation
-  if (a.input) {
-    if (a.input[0] !== OPS.OP_0 ||
-      o.signatures.length === 0 ||
-      !o.signatures.every(isAcceptableSignature)) throw new TypeError('Input is invalid')
+  // extended validation
+  if (opts.validate) {
+    if (a.input) {
+      if (a.input[0] !== OPS.OP_0 ||
+        o.signatures.length === 0 ||
+        !o.signatures.every(isAcceptableSignature)) throw new TypeError('Input is invalid')
 
-    if (a.signatures && !stacksEqual(a.signatures.equals(o.signatures))) throw new TypeError('Signature mismatch')
-  }
+      if (a.signatures && !stacksEqual(a.signatures.equals(o.signatures))) throw new TypeError('Signature mismatch')
+    }
 
-  if (a.pubkeys) {
-    if (a.n !== undefined && a.n !== a.pubkeys.length) throw new TypeError('n Pubkeys mismatch')
-    o.n = a.pubkeys.length
+    if (a.pubkeys) {
+      if (a.n !== undefined && a.n !== a.pubkeys.length) throw new TypeError('n Pubkeys mismatch')
+      o.n = a.pubkeys.length
 
-    if (o.n < o.m) throw new TypeError('Not enough pubkeys provided')
-  }
+      if (o.n < o.m) throw new TypeError('Not enough pubkeys provided')
+    }
 
-  if (a.signatures) {
-    if (a.signatures.length < o.m) throw new TypeError('Not enough signatures provided')
-  }
+    if (a.signatures) {
+      if (a.signatures.length < o.m) throw new TypeError('Not enough signatures provided')
+    }
 
-  if (a.output) {
-    decode(a.output)
-    if (chunks[chunks.length - 1] !== OPS.OP_CHECKMULTISIG) throw new TypeError('Output is invalid')
-    if (!typef.Number(chunks[0])) throw new TypeError('Output is invalid')
-    if (!typef.Number(chunks[chunks.length - 2])) throw new TypeError('Output is invalid')
+    if (a.output) {
+      decode(a.output)
+      if (chunks[chunks.length - 1] !== OPS.OP_CHECKMULTISIG) throw new TypeError('Output is invalid')
+      if (!typef.Number(chunks[0])) throw new TypeError('Output is invalid')
+      if (!typef.Number(chunks[chunks.length - 2])) throw new TypeError('Output is invalid')
 
-    if (
-      o.m <= 0 ||
-      o.n > 16 ||
-      o.m > o.n ||
-      o.n !== chunks.length - 3) throw new TypeError('Output is invalid')
-    if (!o.pubkeys.every(x => bscript.isCanonicalPubKey(x))) throw new TypeError('Output is invalid')
+      if (
+        o.m <= 0 ||
+        o.n > 16 ||
+        o.m > o.n ||
+        o.n !== chunks.length - 3) throw new TypeError('Output is invalid')
+      if (!o.pubkeys.every(x => bscript.isCanonicalPubKey(x))) throw new TypeError('Output is invalid')
 
-    if (a.m !== undefined && a.m !== o.m) throw new TypeError('m mismatch')
-    if (a.n !== undefined && a.n !== o.n) throw new TypeError('n mismatch')
-    if (a.pubkeys && !stacksEqual(a.pubkeys, o.pubkeys)) throw new TypeError('Pubkeys mismatch')
+      if (a.m !== undefined && a.m !== o.m) throw new TypeError('m mismatch')
+      if (a.n !== undefined && a.n !== o.n) throw new TypeError('n mismatch')
+      if (a.pubkeys && !stacksEqual(a.pubkeys, o.pubkeys)) throw new TypeError('Pubkeys mismatch')
+    }
   }
 
   return Object.assign(o, a)

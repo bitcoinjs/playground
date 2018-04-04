@@ -12,7 +12,7 @@ let { lazyprop } = require('./lazy')
 // witness: {signature} {pubKey}
 // input: <>
 // output: OP_0 {pubKeyHash}
-function p2wpkh (a) {
+function p2wpkh (a, opts) {
   if (
     !a.address &&
     !a.hash &&
@@ -20,6 +20,7 @@ function p2wpkh (a) {
     !a.pubkey &&
     !a.witness
   ) throw new TypeError('Not enough data')
+  opts = opts || { validate: true }
 
   typef({
     address: typef.maybe(typef.String),
@@ -34,6 +35,7 @@ function p2wpkh (a) {
 
   let network = a.network || bnetworks.bitcoin
   let o = { network }
+
   lazyprop(o, 'address', function () {
     if (!o.hash) return
     return baddress.toBech32(o.hash, 0x00, network.bech32)
@@ -50,7 +52,6 @@ function p2wpkh (a) {
       o.hash
     ])
   })
-
   lazyprop(o, 'pubkey', function () {
     if (!a.witness) return
     return a.witness[1]
@@ -69,37 +70,39 @@ function p2wpkh (a) {
     return [a.signature, a.pubkey]
   })
 
-  // validation
-  if (a.witness) {
-    if (a.witness.length !== 2 ||
-      !bscript.isCanonicalSignature(a.witness[0]) ||
-      !bscript.isCanonicalPubKey(a.witness[1])) throw new TypeError('Input is invalid')
+  // extended validation
+  if (opts.validate) {
+    if (a.witness) {
+      if (a.witness.length !== 2 ||
+        !bscript.isCanonicalSignature(a.witness[0]) ||
+        !bscript.isCanonicalPubKey(a.witness[1])) throw new TypeError('Input is invalid')
 
-    if (a.signature && !a.signature.equals(a.witness[0])) throw new TypeError('Signature mismatch')
-    if (!a.signature) o.signature = a.witness[0]
+      if (a.signature && !a.signature.equals(a.witness[0])) throw new TypeError('Signature mismatch')
+      if (!a.signature) o.signature = a.witness[0]
 
-    if (a.pubkey && !a.pubkey.equals(a.witness[1])) throw new TypeError('Pubkey mismatch')
-    if (!a.pubkey) o.pubkey = a.witness[1]
-  }
+      if (a.pubkey && !a.pubkey.equals(a.witness[1])) throw new TypeError('Pubkey mismatch')
+      if (!a.pubkey) o.pubkey = a.witness[1]
+    }
 
-  if (a.address) {
-    let decode = baddress.fromBech32(a.address)
-    if (network && network.bech32 !== decode.prefix) throw new TypeError('Network mismatch')
-    if (decode.version !== 0x00) throw new TypeError('Invalid version')
-    if (decode.data.length !== 20) throw new TypeError('Invalid data')
+    if (a.address) {
+      let decode = baddress.fromBech32(a.address)
+      if (network && network.bech32 !== decode.prefix) throw new TypeError('Network mismatch')
+      if (decode.version !== 0x00) throw new TypeError('Invalid version')
+      if (decode.data.length !== 20) throw new TypeError('Invalid data')
 
-    o.hash = decode.data
-  }
+      o.hash = decode.data
+    }
 
-  if (a.pubkey && a.hash) {
-    if (!a.hash.equals(o.hash)) throw new TypeError('Hash mismatch')
-  }
+    if (a.pubkey && a.hash) {
+      if (!a.hash.equals(o.hash)) throw new TypeError('Hash mismatch')
+    }
 
-  if (a.output) {
-    if (
-      a.output.length !== 22 ||
-      a.output[0] !== OPS.OP_0 ||
-      a.output[1] !== 0x14) throw new TypeError('Output is invalid')
+    if (a.output) {
+      if (
+        a.output.length !== 22 ||
+        a.output[0] !== OPS.OP_0 ||
+        a.output[1] !== 0x14) throw new TypeError('Output is invalid')
+    }
   }
 
   return Object.assign(o, a)

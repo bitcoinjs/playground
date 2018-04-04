@@ -19,7 +19,7 @@ function stacksEqual (a, b) {
 // input: [redeemScriptSig ...] {redeemScript}
 // witness: <?>
 // output: OP_HASH160 {hash160(redeemScript)} OP_EQUAL
-function p2sh (a) {
+function p2sh (a, opts) {
   if (
     !a.address &&
     !a.hash &&
@@ -27,6 +27,7 @@ function p2sh (a) {
     !a.redeem &&
     !a.input
   ) throw new TypeError('Not enough data')
+  opts = opts || { validate: true }
 
   typef({
     network: typef.maybe(typef.Object),
@@ -47,6 +48,7 @@ function p2sh (a) {
 
   let network = a.network || bnetworks.bitcoin
   let o = { network }
+
   lazyprop(o, 'address', function () {
     if (!o.hash) return
     return baddress.toBase58Check(o.hash, network.scriptHash)
@@ -65,7 +67,6 @@ function p2sh (a) {
       OPS.OP_EQUAL
     ])
   })
-
   lazyprop(o, 'redeem', function () {
     if (!a.input) return
     let chunks = bscript.decompile(a.input)
@@ -91,24 +92,6 @@ function p2sh (a) {
     return o.redeem.witness
   })
 
-  // validation
-  if (a.address) {
-    let decode = baddress.fromBase58Check(a.address, network.scriptHash)
-    if (network.scriptHash !== decode.version) throw new TypeError('Network mismatch')
-    if (a.hash && !a.hash.equals(decode.hash)) throw new TypeError('Hash mismatch')
-    o.hash = decode.hash
-  }
-
-  if (a.output) {
-    if (
-      a.output.length !== 23 ||
-      a.output[0] !== OPS.OP_HASH160 ||
-      a.output[1] !== 0x14 ||
-      a.output[22] !== OPS.OP_EQUAL) throw new TypeError('Output is invalid')
-
-    if (a.hash && !a.hash.equals(o.hash)) throw new TypeError('Hash mismatch')
-  }
-
   function validateRedeem (redeem) {
     if (network !== redeem.network) throw new TypeError('Network mismatch')
 
@@ -130,26 +113,46 @@ function p2sh (a) {
     }
   }
 
-  if (a.input) {
-    let chunks = bscript.decompile(a.input)
-    if (chunks.length < 1) throw new TypeError('Input too short')
-    if (!Buffer.isBuffer(o.redeem.output)) throw new TypeError('Input is invalid')
-    if (a.redeem &&
-      a.redeem.input &&
-      !a.redeem.input.equals(o.redeem.input)) throw new TypeError('Input and redeem.input mismatch')
-    if (a.redeem &&
-      !a.redeem.output.equals(o.redeem.output)) throw new TypeError('Input and redeem.output mismatch')
+  // extended validation
+  if (opts.validate) {
+    if (a.address) {
+      let decode = baddress.fromBase58Check(a.address, network.scriptHash)
+      if (network.scriptHash !== decode.version) throw new TypeError('Network mismatch')
+      if (a.hash && !a.hash.equals(decode.hash)) throw new TypeError('Hash mismatch')
+      o.hash = decode.hash
+    }
 
-    validateRedeem(o.redeem)
-  }
+    if (a.output) {
+      if (
+        a.output.length !== 23 ||
+        a.output[0] !== OPS.OP_HASH160 ||
+        a.output[1] !== 0x14 ||
+        a.output[22] !== OPS.OP_EQUAL) throw new TypeError('Output is invalid')
 
-  if (a.redeem) validateRedeem(a.redeem)
+      if (a.hash && !a.hash.equals(o.hash)) throw new TypeError('Hash mismatch')
+    }
 
-  if (a.witness) {
-    if (a.redeem &&
-      a.redeem.witness &&
-      a.witness &&
-      !stacksEqual(a.redeem.witness, a.witness)) throw new TypeError('Witness and redeem.witness mismatch')
+    if (a.input) {
+      let chunks = bscript.decompile(a.input)
+      if (chunks.length < 1) throw new TypeError('Input too short')
+      if (!Buffer.isBuffer(o.redeem.output)) throw new TypeError('Input is invalid')
+      if (a.redeem &&
+        a.redeem.input &&
+        !a.redeem.input.equals(o.redeem.input)) throw new TypeError('Input and redeem.input mismatch')
+      if (a.redeem &&
+        !a.redeem.output.equals(o.redeem.output)) throw new TypeError('Input and redeem.output mismatch')
+
+      validateRedeem(o.redeem)
+    }
+
+    if (a.redeem) validateRedeem(a.redeem)
+
+    if (a.witness) {
+      if (a.redeem &&
+        a.redeem.witness &&
+        a.witness &&
+        !stacksEqual(a.redeem.witness, a.witness)) throw new TypeError('Witness and redeem.witness mismatch')
+    }
   }
 
   return Object.assign(o, a)

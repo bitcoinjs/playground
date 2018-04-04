@@ -10,7 +10,7 @@ let { lazyprop } = require('./lazy')
 
 // input: {signature} {pubkey}
 // output: OP_DUP OP_HASH160 {hash160(pubkey)} OP_EQUALVERIFY OP_CHECKSIG
-function p2pkh (a) {
+function p2pkh (a, opts) {
   if (
     !a.address &&
     !a.hash &&
@@ -18,6 +18,7 @@ function p2pkh (a) {
     !a.pubkey &&
     !a.input
   ) throw new TypeError('Not enough data')
+  opts = opts || { validate: true }
 
   typef({
     network: typef.maybe(typef.Object),
@@ -32,6 +33,7 @@ function p2pkh (a) {
 
   let network = a.network || bnetworks.bitcoin
   let o = { network }
+
   lazyprop(o, 'address', function () {
     if (!o.hash) return
     return baddress.toBase58Check(o.hash, network.pubKeyHash)
@@ -51,7 +53,6 @@ function p2pkh (a) {
       OPS.OP_CHECKSIG
     ])
   })
-
   lazyprop(o, 'pubkey', function () {
     if (!a.input) return
     let chunks = bscript.decompile(a.input)
@@ -70,41 +71,43 @@ function p2pkh (a) {
     return bscript.compile([a.signature, a.pubkey])
   })
 
-  // validation
-  if (a.address) {
-    let decode = baddress.fromBase58Check(a.address)
-    if (network.pubKeyHash !== decode.version) throw new TypeError('Network mismatch')
-    if (a.hash && !a.hash.equals(decode.hash)) throw new TypeError('Hash mismatch')
-    o.hash = decode.hash
-  }
+  // extended validation
+  if (opts.validate) {
+    if (a.address) {
+      let decode = baddress.fromBase58Check(a.address)
+      if (network.pubKeyHash !== decode.version) throw new TypeError('Network mismatch')
+      if (a.hash && !a.hash.equals(decode.hash)) throw new TypeError('Hash mismatch')
+      o.hash = decode.hash
+    }
 
-  if (a.output) {
-    if (
-      a.output.length !== 25 ||
-      a.output[0] !== OPS.OP_DUP ||
-      a.output[1] !== OPS.OP_HASH160 ||
-      a.output[2] !== 0x14 ||
-      a.output[23] !== OPS.OP_EQUALVERIFY ||
-      a.output[24] !== OPS.OP_CHECKSIG) throw new TypeError('Output is invalid')
+    if (a.output) {
+      if (
+        a.output.length !== 25 ||
+        a.output[0] !== OPS.OP_DUP ||
+        a.output[1] !== OPS.OP_HASH160 ||
+        a.output[2] !== 0x14 ||
+        a.output[23] !== OPS.OP_EQUALVERIFY ||
+        a.output[24] !== OPS.OP_CHECKSIG) throw new TypeError('Output is invalid')
 
-    if (a.hash && !a.hash.equals(o.hash)) throw new TypeError('Hash mismatch')
-  }
+      if (a.hash && !a.hash.equals(o.hash)) throw new TypeError('Hash mismatch')
+    }
 
-  if (a.pubkey && a.hash) {
-    if (!a.hash.equals(o.hash)) throw new TypeError('Hash mismatch')
-  }
+    if (a.pubkey && a.hash) {
+      if (!a.hash.equals(o.hash)) throw new TypeError('Hash mismatch')
+    }
 
-  if (a.input) {
-    let chunks = bscript.decompile(a.input)
-    if (chunks.length !== 2 ||
-      !bscript.isCanonicalSignature(chunks[0]) ||
-      !bscript.isCanonicalPubKey(chunks[1])) throw new TypeError('Input is invalid')
+    if (a.input) {
+      let chunks = bscript.decompile(a.input)
+      if (chunks.length !== 2 ||
+        !bscript.isCanonicalSignature(chunks[0]) ||
+        !bscript.isCanonicalPubKey(chunks[1])) throw new TypeError('Input is invalid')
 
-    if (a.signature && !a.signature.equals(chunks[0])) throw new TypeError('Signature mismatch')
-    if (a.pubkey && !a.pubkey.equals(chunks[1])) throw new TypeError('Pubkey mismatch')
+      if (a.signature && !a.signature.equals(chunks[0])) throw new TypeError('Signature mismatch')
+      if (a.pubkey && !a.pubkey.equals(chunks[1])) throw new TypeError('Pubkey mismatch')
 
-    o.signature = chunks[0]
-    o.pubkey = chunks[1]
+      o.signature = chunks[0]
+      o.pubkey = chunks[1]
+    }
   }
 
   return Object.assign(o, a)

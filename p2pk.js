@@ -8,11 +8,12 @@ let { lazyprop } = require('./lazy')
 
 // input: {signature}
 // output: {pubKey} OP_CHECKSIG
-function p2pk (a) {
+function p2pk (a, opts) {
   if (
     !a.output &&
     !a.pubkey
   ) throw new TypeError('Not enough data')
+  opts = opts || { validate: true }
 
   typef({
     network: typef.maybe(typef.Object),
@@ -25,6 +26,7 @@ function p2pk (a) {
 
   let network = a.network || bnetworks.bitcoin
   let o = { network }
+
   lazyprop(o, 'output', function () {
     if (!a.pubkey) return
     return bscript.compile([
@@ -45,28 +47,30 @@ function p2pk (a) {
     return bscript.compile([a.signature])
   })
 
-  // validation
-  if (a.input) {
-    let chunks = bscript.decompile(a.input)
+  // extended validation
+  if (opts.validate) {
+    if (a.input) {
+      let chunks = bscript.decompile(a.input)
 
-    if (
-      chunks.length !== 1 || !bscript.isCanonicalSignature(chunks[0])
-    ) throw new TypeError('Input is invalid')
+      if (
+        chunks.length !== 1 || !bscript.isCanonicalSignature(chunks[0])
+      ) throw new TypeError('Input is invalid')
 
-    o.signature = chunks[0]
-  }
+      o.signature = chunks[0]
+    }
 
-  if (a.input && a.signature) {
-    if (!a.input.equals(o.input)) throw new TypeError('Input mismatch')
-  }
+    if (a.input && a.signature) {
+      if (!a.input.equals(o.input)) throw new TypeError('Input mismatch')
+    }
 
-  if (a.output) {
-    if (a.output[a.output.length - 1] !== OPS.OP_CHECKSIG) throw new TypeError('Output is invalid')
-    if (!bscript.isCanonicalPubKey(o.pubkey)) throw new TypeError('Output pubkey is invalid')
-  }
+    if (a.output) {
+      if (a.output[a.output.length - 1] !== OPS.OP_CHECKSIG) throw new TypeError('Output is invalid')
+      if (!bscript.isCanonicalPubKey(o.pubkey)) throw new TypeError('Output pubkey is invalid')
+    }
 
-  if (a.pubkey && a.output) {
-    if (!a.pubkey.equals(o.pubkey)) throw new TypeError('Pubkey mismatch')
+    if (a.pubkey && a.output) {
+      if (!a.pubkey.equals(o.pubkey)) throw new TypeError('Pubkey mismatch')
+    }
   }
 
   return Object.assign(o, a)
