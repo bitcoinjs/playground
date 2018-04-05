@@ -25,7 +25,7 @@ function p2ms (a, opts) {
   opts = opts || { validate: true }
 
   function isAcceptableSignature (x) {
-    return bscript.isCanonicalSignature(x) || (a.allowIncomplete && x === OPS.OP_0)
+    return bscript.isCanonicalSignature(x) || (opts.allowIncomplete && (x === OPS.OP_0))
   }
 
   typef({
@@ -36,8 +36,7 @@ function p2ms (a, opts) {
     pubkeys: typef.maybe(typef.arrayOf(bscript.isCanonicalPubKey)),
 
     signatures: typef.maybe(typef.arrayOf(isAcceptableSignature)),
-    input: typef.maybe(typef.Buffer),
-    allowIncomplete: typef.maybe(typef.Boolean)
+    input: typef.maybe(typef.Buffer)
   }, a)
 
   let network = a.network || bnetworks.bitcoin
@@ -92,30 +91,11 @@ function p2ms (a, opts) {
 
   // extended validation
   if (opts.validate) {
-    if (a.input) {
-      if (a.input[0] !== OPS.OP_0 ||
-        o.signatures.length === 0 ||
-        !o.signatures.every(isAcceptableSignature)) throw new TypeError('Input is invalid')
-
-      if (a.signatures && !stacksEqual(a.signatures.equals(o.signatures))) throw new TypeError('Signature mismatch')
-    }
-
-    if (a.pubkeys) {
-      if (a.n !== undefined && a.n !== a.pubkeys.length) throw new TypeError('n Pubkeys mismatch')
-      o.n = a.pubkeys.length
-
-      if (o.n < o.m) throw new TypeError('Not enough pubkeys provided')
-    }
-
-    if (a.signatures) {
-      if (a.signatures.length < o.m) throw new TypeError('Not enough signatures provided')
-    }
-
     if (a.output) {
       decode(a.output)
-      if (chunks[chunks.length - 1] !== OPS.OP_CHECKMULTISIG) throw new TypeError('Output is invalid')
       if (!typef.Number(chunks[0])) throw new TypeError('Output is invalid')
       if (!typef.Number(chunks[chunks.length - 2])) throw new TypeError('Output is invalid')
+      if (chunks[chunks.length - 1] !== OPS.OP_CHECKMULTISIG) throw new TypeError('Output is invalid')
 
       if (
         o.m <= 0 ||
@@ -127,6 +107,26 @@ function p2ms (a, opts) {
       if (a.m !== undefined && a.m !== o.m) throw new TypeError('m mismatch')
       if (a.n !== undefined && a.n !== o.n) throw new TypeError('n mismatch')
       if (a.pubkeys && !stacksEqual(a.pubkeys, o.pubkeys)) throw new TypeError('Pubkeys mismatch')
+    }
+
+    if (a.pubkeys) {
+      if (a.n !== undefined && a.n !== a.pubkeys.length) throw new TypeError('Pubkey count mismatch')
+      o.n = a.pubkeys.length
+
+      if (o.n < o.m) throw new TypeError('Pubkey count cannot be less than m')
+    }
+
+    if (a.signatures) {
+      if (a.signatures.length < o.m) throw new TypeError('Not enough signatures provided')
+      if (a.signatures.length > o.m) throw new TypeError('Too many signatures provided')
+    }
+
+    if (a.input) {
+      if (a.input[0] !== OPS.OP_0) throw new TypeError('Input is invalid')
+      if (o.signatures.length === 0 || !o.signatures.every(isAcceptableSignature)) throw new TypeError('Input has invalid signature(s)')
+
+      if (a.signatures && !stacksEqual(a.signatures.equals(o.signatures))) throw new TypeError('Signature mismatch')
+      if (a.m !== undefined && a.m !== a.signatures.length) throw new TypeError('Signature count mismatch')
     }
   }
 
