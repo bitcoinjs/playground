@@ -1,0 +1,110 @@
+{
+  "valid": [
+    {
+      "description": "output from address",
+      "arguments": {
+        "address": "1NNY5hGuRnVsM1PNHxK4QCoqazyQuhNTwr"
+      },
+      "expected": {
+        "hash": "ea6d525c0c955d90d3dbd29a81ef8bfb79003727",
+        "output": "OP_DUP OP_HASH160 ea6d525c0c955d90d3dbd29a81ef8bfb79003727 OP_EQUALVERIFY OP_CHECKSIG",
+        "signature": null,
+        "input": null,
+        "witness": null
+      }
+    },
+    {
+      "description": "output from pubkey",
+      "arguments": {
+        "pubkey": "031000000000000000000000000000000000000000000000000000000000000000"
+      },
+      "expected": {
+        "address": "1NNY5hGuRnVsM1PNHxK4QCoqazyQuhNTwr",
+        "hash": "ea6d525c0c955d90d3dbd29a81ef8bfb79003727",
+        "output": "OP_DUP OP_HASH160 ea6d525c0c955d90d3dbd29a81ef8bfb79003727 OP_EQUALVERIFY OP_CHECKSIG",
+        "signature": null,
+        "input": null,
+        "witness": null
+      }
+    },
+    {
+      "description": "output from output",
+      "arguments": {
+        "output": "OP_DUP OP_HASH160 ea6d525c0c955d90d3dbd29a81ef8bfb79003727 OP_EQUALVERIFY OP_CHECKSIG"
+      },
+      "expected": {
+        "address": "1NNY5hGuRnVsM1PNHxK4QCoqazyQuhNTwr",
+        "hash": "ea6d525c0c955d90d3dbd29a81ef8bfb79003727",
+        "signature": null,
+        "input": null,
+        "witness": null
+      }
+    },
+    {
+      "description": "input/output from pubkey/signature",
+      "arguments": {
+        "pubkey": "031000000000000000000000000000000000000000000000000000000000000000",
+        "signature": "300602010002010001"
+      },
+      "expected": {
+        "address": "1NNY5hGuRnVsM1PNHxK4QCoqazyQuhNTwr",
+        "hash": "ea6d525c0c955d90d3dbd29a81ef8bfb79003727",
+        "output": "OP_DUP OP_HASH160 ea6d525c0c955d90d3dbd29a81ef8bfb79003727 OP_EQUALVERIFY OP_CHECKSIG",
+        "input": "300602010002010001 031000000000000000000000000000000000000000000000000000000000000000",
+        "witness": []
+      }
+    },
+    {
+      "description": "input/output from input",
+      "arguments": {
+        "input": "300602010002010001 031000000000000000000000000000000000000000000000000000000000000000"
+      },
+      "expected": {
+        "address": "1NNY5hGuRnVsM1PNHxK4QCoqazyQuhNTwr",
+        "hash": "ea6d525c0c955d90d3dbd29a81ef8bfb79003727",
+        "output": "OP_DUP OP_HASH160 ea6d525c0c955d90d3dbd29a81ef8bfb79003727 OP_EQUALVERIFY OP_CHECKSIG",
+        "pubkey": "031000000000000000000000000000000000000000000000000000000000000000",
+        "signature": "300602010002010001",
+        "witness": []
+      }
+    }
+  ],
+  "invalid": [
+    {
+      "exception": "Not enough data",
+      "arguments": {}
+    },
+    {
+      "exception": "Not enough data",
+      "arguments": {
+        "signature": "300602010002010001"
+      }
+    },
+    {
+      "exception": "Output is invalid",
+      "description": "Unexpected OP",
+      "arguments": {
+        "output": "OP_DUP OP_HASH160 ea6d525c0c955d90d3dbd29a81ef8bfb79003727 OP_EQUALVERIFY OP_RESERVED"
+      }
+    },
+    {
+      "exception": "Pubkey mismatch",
+      "arguments": {
+        "pubkey": "030000000000000000000000000000000000000000000000000000000000000000",
+        "input": "300602010002010001 031000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
+    {
+      "exception": "Input has invalid signature",
+      "arguments": {
+        "input": "ffffffffffffffffff 031000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
+    {
+      "exception": "Input has invalid pubkey",
+      "arguments": {
+        "input": "300602010002010001 ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+      }
+    }
+  ]
+}

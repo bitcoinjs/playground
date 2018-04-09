@@ -57,6 +57,7 @@ function equate (a, b, args) {
   if (b.network) t.deepEqual(a.network, b.network)
 
   // contextual
+  if (b.signature === null) b.signature = undefined
   if ('address' in b) t.strictEqual(a.address, b.address)
   if ('hash' in b) t.strictEqual(tryHex(a.hash), tryHex(b.hash))
   if ('pubkey' in b) t.strictEqual(tryHex(a.pubkey), tryHex(b.pubkey))

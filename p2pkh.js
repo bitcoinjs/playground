@@ -102,9 +102,9 @@ function p2pkh (a, opts) {
 
     if (a.input) {
       let chunks = bscript.decompile(a.input)
-      if (chunks.length !== 2 ||
-        !bscript.isCanonicalSignature(chunks[0]) ||
-        !bscript.isCanonicalPubKey(chunks[1])) throw new TypeError('Input is invalid')
+      if (chunks.length !== 2) throw new TypeError('Input is invalid')
+      if (!bscript.isCanonicalSignature(chunks[0])) throw new TypeError('Input has invalid signature')
+      if (!bscript.isCanonicalPubKey(chunks[1])) throw new TypeError('Input has invalid pubkey')
 
       if (a.signature && !a.signature.equals(chunks[0])) throw new TypeError('Signature mismatch')
       if (a.pubkey && !a.pubkey.equals(chunks[1])) throw new TypeError('Pubkey mismatch')
