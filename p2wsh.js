@@ -48,7 +48,6 @@ function p2wsh (a, opts) {
   }, a)
 
   let network = a.network || bnetworks.bitcoin
-  let validate = a.validate === undefined ? true : a.validate
   let o = { network }
 
   lazyprop(o, 'address', function () {

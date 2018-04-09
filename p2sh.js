@@ -74,7 +74,7 @@ function p2sh (a, opts) {
       network: o.network,
       output: chunks[chunks.length - 1],
       input: bscript.compile(chunks.slice(0, -1)),
-      witness: a.witness
+      witness: a.witness || []
     }
   })
   lazyprop(o, 'input', function () {
@@ -88,12 +88,13 @@ function p2sh (a, opts) {
     ))
   })
   lazyprop(o, 'witness', function () {
+    if (!o.input) return
     if (!o.redeem) return
-    return o.redeem.witness
+    return o.redeem.witness || []
   })
 
   function validateRedeem (redeem) {
-    if (network !== redeem.network) throw new TypeError('Network mismatch')
+    if (redeem.network && redeem.network !== network) throw new TypeError('Network mismatch')
 
     // is the redeem output non-empty?
     if (bscript.decompile(redeem.output).length === 0) throw new TypeError('Redeem.output is invalid')
@@ -104,10 +105,16 @@ function p2sh (a, opts) {
       if (!o.hash.equals(redeemOutputHash)) throw new TypeError('Hash mismatch')
     }
 
-    if (redeem.input) {
-      if (redeem.input.length === 0 && !redeem.witness) throw new TypeError('Redeem.input is invalid')
-      if (redeem.input.length !== 0 && redeem.witness) throw new TypeError('Unexpected witness')
+    let hasInput = redeem.input && redeem.input.length > 0
+    let hasWitness = redeem.witness && redeem.witness.length > 0
 
+    if (hasInput && hasWitness) throw new TypeError('Input and witness provided')
+    if (
+      redeem.input &&
+      !hasInput &&
+      !hasWitness) throw new TypeError('Empty input')
+
+    if (hasInput) {
       let redeemInputChunks = bscript.decompile(redeem.input)
       if (!bscript.isPushOnly(redeemInputChunks)) throw new TypeError('Non push-only scriptSig')
     }
@@ -132,6 +139,7 @@ function p2sh (a, opts) {
       if (a.hash && !a.hash.equals(o.hash)) throw new TypeError('Hash mismatch')
     }
 
+    if (a.redeem) validateRedeem(a.redeem)
     if (a.input) {
       let chunks = bscript.decompile(a.input)
       if (chunks.length < 1) throw new TypeError('Input too short')
@@ -144,8 +152,6 @@ function p2sh (a, opts) {
 
       validateRedeem(o.redeem)
     }
-
-    if (a.redeem) validateRedeem(a.redeem)
 
     if (a.witness) {
       if (a.redeem &&

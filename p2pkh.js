@@ -70,6 +70,10 @@ function p2pkh (a, opts) {
     if (!a.signature) return
     return bscript.compile([a.signature, a.pubkey])
   })
+  lazyprop(o, 'witness', function () {
+    if (!o.input) return
+    return []
+  })
 
   // extended validation
   if (opts.validate) {
