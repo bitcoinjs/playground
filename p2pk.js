@@ -4,7 +4,7 @@ let {
 } = require('bitcoinjs-lib')
 let typef = require('typeforce')
 let OPS = require('bitcoin-ops')
-let { lazyprop } = require('./lazy')
+let { lazyprop, lazyvalue } = require('./lazy')
 
 // input: {signature}
 // output: {pubKey} OP_CHECKSIG
@@ -24,6 +24,8 @@ function p2pk (a, opts) {
     input: typef.maybe(typef.Buffer)
   }, a)
 
+  let _chunks = lazyvalue(function () { return bscript.decompile(a.input) })
+
   let network = a.network || bnetworks.bitcoin
   let o = { network }
 
@@ -40,7 +42,7 @@ function p2pk (a, opts) {
   })
   lazyprop(o, 'signature', function () {
     if (!a.input) return
-    return bscript.decompile(a.input)[0]
+    return _chunks()[0]
   })
   lazyprop(o, 'input', function () {
     if (!a.signature) return
@@ -53,18 +55,8 @@ function p2pk (a, opts) {
 
   // extended validation
   if (opts.validate) {
-    if (a.input) {
-      let chunks = bscript.decompile(a.input)
-
-      if (
-        chunks.length !== 1 || !bscript.isCanonicalSignature(chunks[0])
-      ) throw new TypeError('Input is invalid')
-
-      o.signature = chunks[0]
-    }
-
-    if (a.input && a.signature) {
-      if (!a.input.equals(o.input)) throw new TypeError('Input mismatch')
+    if (a.pubkey && a.output) {
+      if (!a.pubkey.equals(o.pubkey)) throw new TypeError('Pubkey mismatch')
     }
 
     if (a.output) {
@@ -72,8 +64,13 @@ function p2pk (a, opts) {
       if (!bscript.isCanonicalPubKey(o.pubkey)) throw new TypeError('Output pubkey is invalid')
     }
 
-    if (a.pubkey && a.output) {
-      if (!a.pubkey.equals(o.pubkey)) throw new TypeError('Pubkey mismatch')
+    if (a.signature) {
+      if (a.input && !a.input.equals(o.input)) throw new TypeError('Input mismatch')
+    }
+
+    if (a.input) {
+      if (_chunks().length !== 1) throw new TypeError('Input is invalid')
+      if (!bscript.isCanonicalSignature(_chunks()[0])) throw new TypeError('Input has invalid signature')
     }
   }
 

@@ -1,0 +1,118 @@
+{
+  "valid": [
+    {
+      "description": "output from pubkey",
+      "arguments": {
+        "pubkey": "031000000000000000000000000000000000000000000000000000000000000000"
+      },
+      "expected": {
+        "output": "031000000000000000000000000000000000000000000000000000000000000000 OP_CHECKSIG",
+        "signatures": null,
+        "input": null,
+        "witness": null
+      }
+    },
+    {
+      "description": "output from output",
+      "arguments": {
+        "output": "031000000000000000000000000000000000000000000000000000000000000000 OP_CHECKSIG"
+      },
+      "expected": {
+        "pubkey": "031000000000000000000000000000000000000000000000000000000000000000",
+        "signatures": null,
+        "input": null,
+        "witness": null
+      }
+    },
+    {
+      "description": "input/output from pubkey/signature",
+      "arguments": {
+        "pubkey": "031000000000000000000000000000000000000000000000000000000000000000",
+        "signature": "300602010002010001"
+      },
+      "expected": {
+        "output": "031000000000000000000000000000000000000000000000000000000000000000 OP_CHECKSIG",
+        "input": "300602010002010001",
+        "witness": []
+      }
+    },
+    {
+      "description": "input/output from output/signature",
+      "arguments": {
+        "output": "031000000000000000000000000000000000000000000000000000000000000000 OP_CHECKSIG",
+        "signature": "300602010002010001"
+      },
+      "expected": {
+        "pubkey": "031000000000000000000000000000000000000000000000000000000000000000",
+        "input": "300602010002010001",
+        "witness": []
+      }
+    },
+    {
+      "description": "input/output from input/output",
+      "arguments": {
+        "output": "031000000000000000000000000000000000000000000000000000000000000000 OP_CHECKSIG",
+        "input": "300602010002010001"
+      },
+      "expected": {
+        "pubkey": "031000000000000000000000000000000000000000000000000000000000000000",
+        "signature": "300602010002010001",
+        "witness": []
+      }
+    }
+  ],
+  "invalid": [
+    {
+      "exception": "Not enough data",
+      "arguments": {}
+    },
+    {
+      "exception": "Not enough data",
+      "arguments": {
+        "input": "300602010002010001"
+      }
+    },
+    {
+      "exception": "Not enough data",
+      "arguments": {
+        "signature": "300602010002010001"
+      }
+    },
+    {
+      "exception": "Output is invalid",
+      "description": "Unexpected OP",
+      "arguments": {
+        "output": "OP_RESERVED"
+      }
+    },
+    {
+      "exception": "Output pubkey is invalid",
+      "description": "Non-canonical output public key",
+      "arguments": {
+        "output": "ffff OP_CHECKSIG"
+      }
+    },
+    {
+      "exception": "Pubkey mismatch",
+      "arguments": {
+        "pubkey": "030000000000000000000000000000000000000000000000000000000000000000",
+        "output": "031000000000000000000000000000000000000000000000000000000000000000 OP_CHECKSIG"
+      }
+    },
+    {
+      "exception": "Input is invalid",
+      "description": "Too many chunks",
+      "arguments": {
+        "pubkey": "030000000000000000000000000000000000000000000000000000000000000000",
+        "input": "300602010002010001 OP_RESERVED"
+      }
+    },
+    {
+      "exception": "Input has invalid signature",
+      "arguments": {
+        "pubkey": "030000000000000000000000000000000000000000000000000000000000000000",
+        "input": "ffffffffffffffff"
+      }
+    }
+  ]
+}
