@@ -3,7 +3,7 @@
 let assert = require('assert')
 let u = require('./util')
 
-;['p2sh'/*, 'p2ms'*/].forEach(function (p) {
+;['p2sh', 'p2ms'].forEach(function (p) {
   describe(p, function () {
     let fn = require('../' + p)
     let fixtures = require('./fixtures/' + p)

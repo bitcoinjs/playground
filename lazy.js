@@ -18,10 +18,6 @@ function lazyprop (object, name, f) {
   })
 }
 
-function lazyeval (f) {
-  return typeof f === 'function' ? f() : f
-}
-
 function lazyvalue (f) {
   let value
   return function () {
@@ -32,7 +28,6 @@ function lazyvalue (f) {
 }
 
 module.exports = {
-  lazyeval,
   lazyprop,
   lazyvalue
 }

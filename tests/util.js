@@ -13,22 +13,22 @@ function tryASM (x) {
   if (Buffer.isBuffer(x)) return bscript.toASM(x)
   return x
 }
-function asmToBuffer (s) {
-  if (s === '') return Buffer.alloc(0)
-  return bscript.fromASM(s)
+function asmToBuffer (x) {
+  if (x === '') return Buffer.alloc(0)
+  return bscript.fromASM(x)
 }
-function carryOver (expected, args) {
-  for (let k in args) {
-    if (k in expected && k === 'redeem') {
-      carryOver(expected[k], args[k])
+function carryOver (a, b) {
+  for (let k in b) {
+    if (k in a && k === 'redeem') {
+      carryOver(a[k], b[k])
       continue
     }
 
     // don't, the value was specified
-    if (k in expected) continue
+    if (k in a) continue
 
-    // otherwise, we expect arguments to pass through
-    expected[k] = args[k]
+    // otherwise, expect match
+    a[k] = b[k]
   }
 }
 
