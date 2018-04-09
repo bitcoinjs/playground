@@ -32,6 +32,12 @@ function carryOver (expected, args) {
   }
 }
 
+function equateBase (a, b) {
+  if ('output' in b) t.strictEqual(tryASM(a.output), tryASM(b.output))
+  if ('input' in b) t.strictEqual(tryASM(a.input), tryASM(b.input))
+  if ('witness' in b) t.deepEqual(tryHex(a.witness), tryHex(b.witness))
+}
+
 function equate (a, b, args) {
   b = Object.assign({}, b)
   carryOver(b, args)
@@ -46,29 +52,19 @@ function equate (a, b, args) {
     if (b.redeem.witness === null) b.redeem.witness = undefined
   }
 
-  if ('output' in b) t.strictEqual(tryASM(a.output), tryASM(b.output), 'Same output')
-  if ('input' in b) t.strictEqual(tryASM(a.input), tryASM(b.input), 'Same input')
-  if ('witness' in b) {
-    t.deepEqual(tryHex(a.witness), tryHex(b.witness), 'Same witness')
-  }
+  equateBase(a, b)
+  if (b.redeem) equateBase(a.redeem, b.redeem)
   if (b.network) t.deepEqual(a.network, b.network)
-  if (b.redeem) {
-    if ('output' in b.redeem) t.strictEqual(tryASM(a.redeem.output), tryASM(b.redeem.output), 'Same redeem output')
-    if ('input' in b.redeem) t.strictEqual(tryASM(a.redeem.input), tryASM(b.redeem.input), 'Same redeem input')
-    if ('witness' in b.redeem) {
-      t.deepEqual(tryHex(a.redeem.witness), tryHex(b.redeem.witness), 'Same redeem witness')
-    }
-  }
 
   // contextual
-  if ('address' in b) t.strictEqual(a.address, b.address, 'Same address')
-  if ('hash' in b) t.strictEqual(tryHex(a.hash), tryHex(b.hash), 'Same hash(output)')
-  if ('pubkey' in b) t.strictEqual(tryHex(a.pubkey), tryHex(b.pubkey), 'Same pubkey')
-  if ('signature' in b) t.strictEqual(tryHex(a.signature), tryHex(b.signature), 'Same signature')
-  if ('m' in b) t.strictEqual(a.m, b.m, 'Same m')
-  if ('n' in b) t.strictEqual(a.n, b.n, 'Same n')
-  if ('pubkeys' in b) t.deepEqual(tryHex(a.pubkeys), tryHex(b.pubkeys), 'Same pubkeys')
-  if ('signatures' in b) t.deepEqual(tryHex(a.signatures), tryHex(b.signatures), 'Same signatures')
+  if ('address' in b) t.strictEqual(a.address, b.address)
+  if ('hash' in b) t.strictEqual(tryHex(a.hash), tryHex(b.hash))
+  if ('pubkey' in b) t.strictEqual(tryHex(a.pubkey), tryHex(b.pubkey))
+  if ('signature' in b) t.strictEqual(tryHex(a.signature), tryHex(b.signature))
+  if ('m' in b) t.strictEqual(a.m, b.m)
+  if ('n' in b) t.strictEqual(a.n, b.n)
+  if ('pubkeys' in b) t.deepEqual(tryHex(a.pubkeys), tryHex(b.pubkeys))
+  if ('signatures' in b) t.deepEqual(tryHex(a.signatures), tryHex(b.signatures))
 }
 
 function preform (x) {
