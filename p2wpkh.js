@@ -73,9 +73,9 @@ function p2wpkh (a, opts) {
   // extended validation
   if (opts.validate) {
     if (a.witness) {
-      if (a.witness.length !== 2 ||
-        !bscript.isCanonicalSignature(a.witness[0]) ||
-        !bscript.isCanonicalPubKey(a.witness[1])) throw new TypeError('Input is invalid')
+      if (a.witness.length !== 2) throw new TypeError('Input is invalid')
+      if (!bscript.isCanonicalSignature(a.witness[0])) throw new TypeError('Input has invalid signature')
+      if (!bscript.isCanonicalPubKey(a.witness[1])) throw new TypeError('Input has invalid pubkey')
 
       if (a.signature && !a.signature.equals(a.witness[0])) throw new TypeError('Signature mismatch')
       if (!a.signature) o.signature = a.witness[0]
