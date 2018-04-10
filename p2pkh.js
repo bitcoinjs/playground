@@ -6,7 +6,7 @@ let {
 } = require('bitcoinjs-lib')
 let typef = require('typeforce')
 let OPS = require('bitcoin-ops')
-let { lazyprop } = require('./lazy')
+let { lazyprop, lazyvalue } = require('./lazy')
 
 // input: {signature} {pubkey}
 // output: OP_DUP OP_HASH160 {hash160(pubkey)} OP_EQUALVERIFY OP_CHECKSIG
@@ -31,6 +31,9 @@ function p2pkh (a, opts) {
     input: typef.maybe(typef.Buffer)
   }, a)
 
+  let _address = lazyvalue(function () { return baddress.fromBase58Check(a.address) })
+  let _chunks = lazyvalue(function () { return bscript.decompile(a.input) })
+
   let network = a.network || bnetworks.bitcoin
   let o = { network }
 
@@ -40,7 +43,7 @@ function p2pkh (a, opts) {
   })
   lazyprop(o, 'hash', function () {
     if (a.output) return a.output.slice(3, 23)
-    if (a.address) return baddress.fromBase58Check(a.address).hash
+    if (a.address) return _address().hash
     if (o.pubkey) return bcrypto.hash160(o.pubkey)
   })
   lazyprop(o, 'output', function () {
@@ -55,15 +58,11 @@ function p2pkh (a, opts) {
   })
   lazyprop(o, 'pubkey', function () {
     if (!a.input) return
-    let chunks = bscript.decompile(a.input)
-    if (!a.signature) o.signature = chunks[0]
-    return chunks[1]
+    return _chunks()[1]
   })
   lazyprop(o, 'signature', function () {
     if (!a.input) return
-    let chunks = bscript.decompile(a.input)
-    if (!o.pubkey) o.pubkey = chunks[1]
-    return chunks[0]
+    return _chunks()[0]
   })
   lazyprop(o, 'input', function () {
     if (!a.pubkey) return
@@ -78,10 +77,9 @@ function p2pkh (a, opts) {
   // extended validation
   if (opts.validate) {
     if (a.address) {
-      let decode = baddress.fromBase58Check(a.address)
-      if (network.pubKeyHash !== decode.version) throw new TypeError('Network mismatch')
-      if (a.hash && !a.hash.equals(decode.hash)) throw new TypeError('Hash mismatch')
-      o.hash = decode.hash
+      if (network.pubKeyHash !== _address().version) throw new TypeError('Network mismatch')
+      if (a.hash && !a.hash.equals(_address().hash)) throw new TypeError('Hash mismatch')
+      o.hash = _address().hash
     }
 
     if (a.output) {
@@ -101,7 +99,7 @@ function p2pkh (a, opts) {
     }
 
     if (a.input) {
-      let chunks = bscript.decompile(a.input)
+      let chunks = _chunks()
       if (chunks.length !== 2) throw new TypeError('Input is invalid')
       if (!bscript.isCanonicalSignature(chunks[0])) throw new TypeError('Input has invalid signature')
       if (!bscript.isCanonicalPubKey(chunks[1])) throw new TypeError('Input has invalid pubkey')
