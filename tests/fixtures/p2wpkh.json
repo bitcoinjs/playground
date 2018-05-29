@@ -104,6 +104,47 @@
       }
     },
     {
+      "exception": "Hash mismatch",
+      "arguments": {
+        "pubkey": "030000000000000000000000000000000000000000000000000000000000000000",
+        "hash": "ffffffffffffffffffffffffffffffffffffffff"
+      }
+    },
+    {
+      "exception": "Hash mismatch",
+      "arguments": {
+        "address": "bc1qafk4yhqvj4wep57m62dgrmutldusqde8adh20d",
+        "hash": "ffffffffffffffffffffffffffffffffffffffff"
+      }
+    },
+    {
+      "exception": "Hash mismatch",
+      "arguments": {
+        "output": "OP_0 ea6d525c0c955d90d3dbd29a81ef8bfb79003727",
+        "hash": "ffffffffffffffffffffffffffffffffffffffff"
+      }
+    },
+    {
+      "exception": "Hash mismatch",
+      "arguments": {
+        "hash": "ffffffffffffffffffffffffffffffffffffffff",
+        "witness": [
+          "300602010002010001",
+          "031000000000000000000000000000000000000000000000000000000000000000"
+        ]
+      }
+    },
+    {
+      "exception": "Hash mismatch",
+      "arguments": {
+        "hash": "ffffffffffffffffffffffffffffffffffffffff",
+        "witness": [
+          "300602010002010001",
+          "031000000000000000000000000000000000000000000000000000000000000000"
+        ]
+      }
+    },
+    {
       "exception": "Input has invalid signature",
       "arguments": {
         "witness": [
