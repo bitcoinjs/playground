@@ -96,15 +96,14 @@ function p2sh (a, opts) {
   })
 
   if (opts.validate) {
-    let hash
     if (a.address) {
       if (network.scriptHash !== _address().version) throw new TypeError('Network mismatch')
-      hash = _address().hash
+      o.hash = _address().hash
     }
 
     if (a.hash) {
-      if (hash && !hash.equals(a.hash)) throw new TypeError('Hash mismatch')
-      hash = a.hash
+      if (o.hash && !o.hash.equals(a.hash)) throw new TypeError('Hash mismatch')
+      else o.hash = a.hash
     }
 
     if (a.output) {
@@ -113,9 +112,9 @@ function p2sh (a, opts) {
         a.output[0] !== OPS.OP_HASH160 ||
         a.output[1] !== 0x14 ||
         a.output[22] !== OPS.OP_EQUAL) throw new TypeError('Output is invalid')
-      let ohash = a.output.slice(2, 22)
-      if (hash && !hash.equals(ohash)) throw new TypeError('Hash mismatch')
-      hash = ohash
+      let hash = a.output.slice(2, 22)
+      if (o.hash && !o.hash.equals(hash)) throw new TypeError('Hash mismatch')
+      else o.hash = hash
     }
 
     if (a.input) {
@@ -138,10 +137,8 @@ function p2sh (a, opts) {
       if (bscript.decompile(o.redeem.output).length < 1) throw new TypeError('Redeem.output too short')
 
       // match hash against other sources
-      if (hash) {
-        let rOutputHash = bcrypto.hash160(o.redeem.output)
-        if (!hash.equals(rOutputHash)) throw new TypeError('Hash mismatch')
-      }
+      let rOutputHash = bcrypto.hash160(o.redeem.output)
+      if (o.hash && !o.hash.equals(rOutputHash)) throw new TypeError('Hash mismatch')
 
       if (o.redeem.input) {
         let hasInput = o.redeem.input.length > 0
