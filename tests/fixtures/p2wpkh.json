@@ -135,16 +135,6 @@
       }
     },
     {
-      "exception": "Hash mismatch",
-      "arguments": {
-        "hash": "ffffffffffffffffffffffffffffffffffffffff",
-        "witness": [
-          "300602010002010001",
-          "031000000000000000000000000000000000000000000000000000000000000000"
-        ]
-      }
-    },
-    {
       "exception": "Input has invalid signature",
       "arguments": {
         "witness": [

@@ -44,7 +44,7 @@ function p2pkh (a, opts) {
   lazyprop(o, 'hash', function () {
     if (a.output) return a.output.slice(3, 23)
     if (a.address) return _address().hash
-    if (o.pubkey) return bcrypto.hash160(o.pubkey)
+    if (a.pubkey || o.pubkey) return bcrypto.hash160(a.pubkey || o.pubkey)
   })
   lazyprop(o, 'output', function () {
     if (!o.hash) return
@@ -76,10 +76,16 @@ function p2pkh (a, opts) {
 
   // extended validation
   if (opts.validate) {
+    let hash
     if (a.address) {
       if (network.pubKeyHash !== _address().version) throw new TypeError('Network mismatch')
       if (a.hash && !a.hash.equals(_address().hash)) throw new TypeError('Hash mismatch')
-      o.hash = _address().hash
+      else hash = _address().hash
+    }
+
+    if (a.hash) {
+      if (hash && !hash.equals(a.hash)) throw new TypeError('Hash mismatch')
+      else hash = a.hash
     }
 
     if (a.output) {
@@ -91,11 +97,14 @@ function p2pkh (a, opts) {
         a.output[23] !== OPS.OP_EQUALVERIFY ||
         a.output[24] !== OPS.OP_CHECKSIG) throw new TypeError('Output is invalid')
 
-      if (a.hash && !a.hash.equals(o.hash)) throw new TypeError('Hash mismatch')
+      if (a.hash && !a.hash.equals(a.output.slice(3, 23))) throw new TypeError('Hash mismatch')
+      else hash = a.output.slice(3, 23)
     }
 
-    if (a.pubkey && a.hash) {
-      if (!a.hash.equals(o.hash)) throw new TypeError('Hash mismatch')
+    if (a.pubkey) {
+      let pkh = bcrypto.hash160(a.pubkey)
+      if (hash && !hash.equals(pkh)) throw new TypeError('Hash mismatch')
+      else hash = pkh
     }
 
     if (a.input) {
@@ -107,8 +116,8 @@ function p2pkh (a, opts) {
       if (a.signature && !a.signature.equals(chunks[0])) throw new TypeError('Signature mismatch')
       if (a.pubkey && !a.pubkey.equals(chunks[1])) throw new TypeError('Pubkey mismatch')
 
-      o.signature = chunks[0]
-      o.pubkey = chunks[1]
+      let pkh = bcrypto.hash160(chunks[1])
+      if (hash && !hash.equals(pkh)) throw new TypeError('Hash mismatch')
     }
   }
 
