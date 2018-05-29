@@ -1,18 +1,6 @@
 {
   "valid": [
     {
-      "description": "output from pubkey",
-      "arguments": {
-        "pubkey": "031000000000000000000000000000000000000000000000000000000000000000"
-      },
-      "expected": {
-        "output": "031000000000000000000000000000000000000000000000000000000000000000 OP_CHECKSIG",
-        "signatures": null,
-        "input": null,
-        "witness": null
-      }
-    },
-    {
       "description": "output from output",
       "arguments": {
         "output": "031000000000000000000000000000000000000000000000000000000000000000 OP_CHECKSIG"
@@ -25,15 +13,15 @@
       }
     },
     {
-      "description": "input/output from pubkey/signature",
+      "description": "output from pubkey",
       "arguments": {
-        "pubkey": "031000000000000000000000000000000000000000000000000000000000000000",
-        "signature": "300602010002010001"
+        "pubkey": "031000000000000000000000000000000000000000000000000000000000000000"
       },
       "expected": {
         "output": "031000000000000000000000000000000000000000000000000000000000000000 OP_CHECKSIG",
-        "input": "300602010002010001",
-        "witness": []
+        "signatures": null,
+        "input": null,
+        "witness": null
       }
     },
     {
@@ -44,6 +32,18 @@
       },
       "expected": {
         "pubkey": "031000000000000000000000000000000000000000000000000000000000000000",
+        "input": "300602010002010001",
+        "witness": []
+      }
+    },
+    {
+      "description": "input/output from pubkey/signature",
+      "arguments": {
+        "pubkey": "031000000000000000000000000000000000000000000000000000000000000000",
+        "signature": "300602010002010001"
+      },
+      "expected": {
+        "output": "031000000000000000000000000000000000000000000000000000000000000000 OP_CHECKSIG",
         "input": "300602010002010001",
         "witness": []
       }

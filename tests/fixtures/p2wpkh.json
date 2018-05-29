@@ -1,12 +1,11 @@
 {
   "valid": [
     {
-      "description": "output from pubkey",
+      "description": "output from address",
       "arguments": {
-        "pubkey": "031000000000000000000000000000000000000000000000000000000000000000"
+        "address": "bc1qafk4yhqvj4wep57m62dgrmutldusqde8adh20d"
       },
       "expected": {
-        "address": "bc1qafk4yhqvj4wep57m62dgrmutldusqde8adh20d",
         "hash": "ea6d525c0c955d90d3dbd29a81ef8bfb79003727",
         "output": "OP_0 ea6d525c0c955d90d3dbd29a81ef8bfb79003727",
         "signature": null,
@@ -15,12 +14,12 @@
       }
     },
     {
-      "description": "output from address",
+      "description": "output from hash",
       "arguments": {
-        "address": "bc1qafk4yhqvj4wep57m62dgrmutldusqde8adh20d"
+        "hash": "ea6d525c0c955d90d3dbd29a81ef8bfb79003727"
       },
       "expected": {
-        "hash": "ea6d525c0c955d90d3dbd29a81ef8bfb79003727",
+        "address": "bc1qafk4yhqvj4wep57m62dgrmutldusqde8adh20d",
         "output": "OP_0 ea6d525c0c955d90d3dbd29a81ef8bfb79003727",
         "signature": null,
         "input": null,
@@ -35,6 +34,20 @@
       "expected": {
         "address": "bc1qafk4yhqvj4wep57m62dgrmutldusqde8adh20d",
         "hash": "ea6d525c0c955d90d3dbd29a81ef8bfb79003727",
+        "signature": null,
+        "input": null,
+        "witness": null
+      }
+    },
+    {
+      "description": "output from pubkey",
+      "arguments": {
+        "pubkey": "031000000000000000000000000000000000000000000000000000000000000000"
+      },
+      "expected": {
+        "address": "bc1qafk4yhqvj4wep57m62dgrmutldusqde8adh20d",
+        "hash": "ea6d525c0c955d90d3dbd29a81ef8bfb79003727",
+        "output": "OP_0 ea6d525c0c955d90d3dbd29a81ef8bfb79003727",
         "signature": null,
         "input": null,
         "witness": null
