@@ -14,6 +14,19 @@
       }
     },
     {
+      "description": "p2sh-*, out (from hash)",
+      "arguments": {
+        "hash": "9f840a5fc02407ef0ad499c2ec0eb0b942fb0086"
+      },
+      "expected": {
+        "address": "3GETYP4cuSesh2zsPEEYVZqnRedwe4FwUT",
+        "output": "OP_HASH160 9f840a5fc02407ef0ad499c2ec0eb0b942fb0086 OP_EQUAL",
+        "redeem": null,
+        "input": null,
+        "witness": null
+      }
+    },
+    {
       "description": "p2sh-*, out (from output)",
       "arguments": {
         "output": "OP_HASH160 9f840a5fc02407ef0ad499c2ec0eb0b942fb0086 OP_EQUAL"
@@ -167,6 +180,15 @@
       }
     },
     {
+      "description": "address.hash != H",
+      "exception": "Hash mismatch",
+      "arguments": {
+        "address": "325CuTNSYmvurXaBmhNFer5zDkKnDXZggu",
+        "output": "OP_HASH160 ffffffffffffffffffffffffffffffffffffffff OP_EQUAL"
+      }
+    },
+    {
+      "description": "output.hash != H",
       "exception": "Hash mismatch",
       "arguments": {
         "hash": "ffffffffffffffffffffffffffffffffffffffff",
@@ -174,10 +196,13 @@
       }
     },
     {
+      "description": "H(redeem) != H",
       "exception": "Hash mismatch",
       "arguments": {
-        "address": "325CuTNSYmvurXaBmhNFer5zDkKnDXZggu",
-        "output": "OP_HASH160 ffffffffffffffffffffffffffffffffffffffff OP_EQUAL"
+        "hash": "ffffffffffffffffffffffffffffffffffffffff",
+        "redeem": {
+          "output": "03e15819590382a9dd878f01e2f0cbce541564eb415e43b440472d883ecd283058 OP_CHECKSIG"
+        }
       }
     },
     {
