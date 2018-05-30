@@ -173,6 +173,27 @@
       "arguments": {}
     },
     {
+      "description": "Non-minimally encoded (non BIP62 compliant)",
+      "exception": "Expected property \"output\" of type Buffer\\(Length: 23\\), got Buffer\\(Length: 24\\)",
+      "arguments": {
+        "outputHex": "a94c14c286a1af0947f58d1ad787385b1c2c4a976f9e7187"
+      }
+    },
+    {
+      "description": "Expected OP_HASH160",
+      "exception": "Output is invalid",
+      "arguments": {
+        "output": "OP_HASH256 ffffffffffffffffffffffffffffffffffffffff OP_EQUAL"
+      }
+    },
+    {
+      "description": "Unexpected OP_RESERVED",
+      "exception": "Output is invalid",
+      "arguments": {
+        "output": "OP_HASH256 ffffffffffffffffffffffffffffffffffffff OP_EQUAL OP_RESERVED"
+      }
+    },
+    {
       "description": "address.hash != H",
       "exception": "Hash mismatch",
       "arguments": {
@@ -204,12 +225,6 @@
         "redeem": {
           "output": "03e15819590382a9dd878f01e2f0cbce541564eb415e43b440472d883ecd283058 OP_CHECKSIG"
         }
-      }
-    },
-    {
-      "exception": "Output is invalid",
-      "arguments": {
-        "output": "OP_HASH256 ffffffffffffffffffffffffffffffffffffffff OP_EQUAL"
       }
     },
     {
