@@ -96,14 +96,16 @@ function p2sh (a, opts) {
   })
 
   if (opts.validate) {
+    let hash
     if (a.address) {
-      if (network.scriptHash !== _address().version) throw new TypeError('Network mismatch')
-      o.hash = _address().hash
+      if (_address().version !== network.scriptHash) throw new TypeError('Network mismatch')
+      if (_address().hash.length !== 20) throw new TypeError('Invalid address')
+      else hash = _address().hash
     }
 
     if (a.hash) {
-      if (o.hash && !o.hash.equals(a.hash)) throw new TypeError('Hash mismatch')
-      else o.hash = a.hash
+      if (hash && !hash.equals(a.hash)) throw new TypeError('Hash mismatch')
+      else hash = a.hash
     }
 
     if (a.output) {
@@ -112,9 +114,9 @@ function p2sh (a, opts) {
         a.output[0] !== OPS.OP_HASH160 ||
         a.output[1] !== 0x14 ||
         a.output[22] !== OPS.OP_EQUAL) throw new TypeError('Output is invalid')
-      let hash = a.output.slice(2, 22)
-      if (o.hash && !o.hash.equals(hash)) throw new TypeError('Hash mismatch')
-      else o.hash = hash
+      let hash2 = a.output.slice(2, 22)
+      if (hash && !hash.equals(hash2)) throw new TypeError('Hash mismatch')
+      else hash = hash2
     }
 
     if (a.input) {
@@ -129,6 +131,11 @@ function p2sh (a, opts) {
         if (a.redeem.output && !a.redeem.output.equals(o.redeem.output)) throw new TypeError('Redeem.output mismatch')
         if (a.redeem.input && !a.redeem.input.equals(o.redeem.input)) throw new TypeError('Redeem.input mismatch')
       }
+
+      let hash2 = bcrypto.hash160(a.redeem.output)
+      if (hash && !hash.equals(hash2)) throw new TypeError('Hash mismatch')
+      else hash = hash2
+
       o.redeem = a.redeem
     }
 

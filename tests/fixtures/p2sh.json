@@ -104,7 +104,7 @@
       }
     },
     {
-      "description": "p2sh-p2wpkh, in and out (from redeem AND input)",
+      "description": "p2sh-p2wpkh, in and out (from redeem w/ witness)",
       "arguments": {
         "redeem": {
           "output": "OP_0 c30afa58ae0673b00a45b5c17dff4633780f1400",
@@ -129,8 +129,7 @@
     {
       "description": "p2sh-p2pk, in and out (from input)",
       "arguments": {
-        "input": "3045022100e4fce9ec72b609a2df1dc050c20dcf101d27faefb3e686b7a4cb067becdd5e8e022071287fced53806b08cf39b5ad58bbe614775b3776e98a9f8760af0d4d1d47a9501 2103e15819590382a9dd878f01e2f0cbce541564eb415e43b440472d883ecd283058ac",
-        "witness": []
+        "input": "3045022100e4fce9ec72b609a2df1dc050c20dcf101d27faefb3e686b7a4cb067becdd5e8e022071287fced53806b08cf39b5ad58bbe614775b3776e98a9f8760af0d4d1d47a9501 2103e15819590382a9dd878f01e2f0cbce541564eb415e43b440472d883ecd283058ac"
       },
       "expected": {
         "address": "36TibC8RrPB9WrBdPoGXhHqDHJosyFVtVQ",
@@ -140,7 +139,8 @@
           "output": "03e15819590382a9dd878f01e2f0cbce541564eb415e43b440472d883ecd283058 OP_CHECKSIG",
           "input": "3045022100e4fce9ec72b609a2df1dc050c20dcf101d27faefb3e686b7a4cb067becdd5e8e022071287fced53806b08cf39b5ad58bbe614775b3776e98a9f8760af0d4d1d47a9501",
           "witness": []
-        }
+        },
+        "witness": []
       }
     },
     {
@@ -173,6 +173,7 @@
       "arguments": {}
     },
     {
+      "description": "address.hash != H",
       "exception": "Hash mismatch",
       "arguments": {
         "address": "325CuTNSYmvurXaBmhNFer5zDkKnDXZggu",
@@ -180,7 +181,7 @@
       }
     },
     {
-      "description": "address.hash != H",
+      "description": "address.hash != output.hash",
       "exception": "Hash mismatch",
       "arguments": {
         "address": "325CuTNSYmvurXaBmhNFer5zDkKnDXZggu",
@@ -196,7 +197,7 @@
       }
     },
     {
-      "description": "H(redeem) != H",
+      "description": "H(redeem.output) != H",
       "exception": "Hash mismatch",
       "arguments": {
         "hash": "ffffffffffffffffffffffffffffffffffffffff",

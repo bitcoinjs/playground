@@ -32,10 +32,10 @@ function carryOver (a, b) {
   }
 }
 
-function equateBase (a, b) {
-  if ('output' in b) t.strictEqual(tryASM(a.output), tryASM(b.output))
-  if ('input' in b) t.strictEqual(tryASM(a.input), tryASM(b.input))
-  if ('witness' in b) t.deepEqual(tryHex(a.witness), tryHex(b.witness))
+function equateBase (a, b, context) {
+  if ('output' in b) t.strictEqual(tryASM(a.output), tryASM(b.output), `Inequal ${context}*.output`)
+  if ('input' in b) t.strictEqual(tryASM(a.input), tryASM(b.input), `Inequal ${context}*.input`)
+  if ('witness' in b) t.deepEqual(tryHex(a.witness), tryHex(b.witness), `Inequal ${context}*.witness`)
 }
 
 function equate (a, b, args) {
@@ -52,20 +52,20 @@ function equate (a, b, args) {
     if (b.redeem.witness === null) b.redeem.witness = undefined
   }
 
-  equateBase(a, b)
-  if (b.redeem) equateBase(a.redeem, b.redeem)
-  if (b.network) t.deepEqual(a.network, b.network)
+  equateBase(a, b, '')
+  if (b.redeem) equateBase(a.redeem, b.redeem, 'redeem.')
+  if (b.network) t.deepEqual(a.network, b.network, 'Inequal *.network')
 
   // contextual
   if (b.signature === null) b.signature = undefined
-  if ('address' in b) t.strictEqual(a.address, b.address)
-  if ('hash' in b) t.strictEqual(tryHex(a.hash), tryHex(b.hash))
-  if ('pubkey' in b) t.strictEqual(tryHex(a.pubkey), tryHex(b.pubkey))
-  if ('signature' in b) t.strictEqual(tryHex(a.signature), tryHex(b.signature))
-  if ('m' in b) t.strictEqual(a.m, b.m)
-  if ('n' in b) t.strictEqual(a.n, b.n)
-  if ('pubkeys' in b) t.deepEqual(tryHex(a.pubkeys), tryHex(b.pubkeys))
-  if ('signatures' in b) t.deepEqual(tryHex(a.signatures), tryHex(b.signatures))
+  if ('address' in b) t.strictEqual(a.address, b.address, 'Inequal *.address')
+  if ('hash' in b) t.strictEqual(tryHex(a.hash), tryHex(b.hash), 'Inequal *.hash')
+  if ('pubkey' in b) t.strictEqual(tryHex(a.pubkey), tryHex(b.pubkey), 'Inequal *.pubkey')
+  if ('signature' in b) t.strictEqual(tryHex(a.signature), tryHex(b.signature), 'Inequal signature')
+  if ('m' in b) t.strictEqual(a.m, b.m, 'Inequal *.m')
+  if ('n' in b) t.strictEqual(a.n, b.n, 'Inequal *.n')
+  if ('pubkeys' in b) t.deepEqual(tryHex(a.pubkeys), tryHex(b.pubkeys), 'Inequal *.pubkeys')
+  if ('signatures' in b) t.deepEqual(tryHex(a.signatures), tryHex(b.signatures), 'Inequal *.signatures')
 }
 
 function preform (x) {
