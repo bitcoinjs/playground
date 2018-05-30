@@ -94,10 +94,31 @@
       }
     },
     {
+      "description": "Unexpected OP_RESERVED",
       "exception": "Output is invalid",
-      "description": "Unexpected OP",
       "arguments": {
         "output": "OP_DUP OP_HASH160 ea6d525c0c955d90d3dbd29a81ef8bfb79003727 OP_EQUALVERIFY OP_RESERVED"
+      }
+    },
+    {
+      "description": "Unexpected OP_DUP",
+      "exception": "Output is invalid",
+      "arguments": {
+        "output": "OP_DUP OP_DUP ea6d525c0c955d90d3dbd29a81ef8bfb7900372737 OP_EQUALVERIFY"
+      }
+    },
+    {
+      "description": "Hash too short (too many chunks)",
+      "exception": "Output is invalid",
+      "arguments": {
+        "output": "OP_DUP OP_DUP ea6d525c0c955d90d3dbd29a81ef8bfb79003727 OP_TRUE OP_EQUALVERIFY"
+      }
+    },
+    {
+      "description": "Non-minimally encoded (non BIP62 compliant)",
+      "exception": "Expected property \"output\" of type Buffer\\(Length: 25\\), got Buffer\\(Length: 26\\)",
+      "arguments": {
+        "outputHex": "76a94c14aa4d7985c57e011a8b3dd8e0e5a73aaef41629c588ac"
       }
     },
     {
@@ -117,6 +138,13 @@
       "exception": "Input has invalid pubkey",
       "arguments": {
         "input": "300602010002010001 ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+      }
+    },
+    {
+      "description": "Input has unexpected data",
+      "exception": "Input is invalid",
+      "arguments": {
+        "input": "300602010002010001 031000000000000000000000000000000000000000000000000000000000000000 ffff"
       }
     },
     {

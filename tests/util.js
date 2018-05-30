@@ -72,6 +72,10 @@ function preform (x) {
   x = Object.assign({}, x)
 
   if (x.network) x.network = bnetworks[x.network]
+  if (typeof x.outputHex === 'string') {
+    x.output = Buffer.from(x.outputHex, 'hex')
+    delete x.outputHex
+  }
   if (typeof x.output === 'string') x.output = asmToBuffer(x.output)
   if (typeof x.input === 'string') x.input = asmToBuffer(x.input)
   if (Array.isArray(x.witness)) x.witness = x.witness.map(function (y) { return Buffer.from(y, 'hex') })
