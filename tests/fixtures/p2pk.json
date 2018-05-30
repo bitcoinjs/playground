@@ -79,17 +79,32 @@
       }
     },
     {
+      "description": "Non-canonical signature",
+      "exception": "Expected property \"signature\" of type \\?isCanonicalSignature, got Buffer",
+      "arguments": {
+        "pubkey": "030000000000000000000000000000000000000000000000000000000000000000",
+        "signature": "3044"
+      }
+    },
+    {
+      "description": "Unexpected OP_RESERVED",
       "exception": "Output is invalid",
-      "description": "Unexpected OP",
       "arguments": {
         "output": "OP_RESERVED"
       }
     },
     {
-      "exception": "Output pubkey is invalid",
       "description": "Non-canonical output public key",
+      "exception": "Output pubkey is invalid",
       "arguments": {
         "output": "ffff OP_CHECKSIG"
+      }
+    },
+    {
+      "description": "Unexpected OP_0 (at end)",
+      "exception": "Output is invalid",
+      "arguments": {
+        "output": "030000000000000000000000000000000000000000000000000000000000000000 OP_CHECKSIG OP_0"
       }
     },
     {
@@ -100,8 +115,8 @@
       }
     },
     {
-      "exception": "Input is invalid",
       "description": "Too many chunks",
+      "exception": "Input is invalid",
       "arguments": {
         "pubkey": "030000000000000000000000000000000000000000000000000000000000000000",
         "input": "300602010002010001 OP_RESERVED"
