@@ -78,8 +78,8 @@ function p2pkh (a, opts) {
   if (opts.validate) {
     let hash
     if (a.address) {
-      if (network.pubKeyHash !== _address().version) throw new TypeError('Network mismatch')
-      if (a.hash && !a.hash.equals(_address().hash)) throw new TypeError('Hash mismatch')
+      if (_address().version !== network.pubKeyHash) throw new TypeError('Network mismatch')
+      if (_address().hash.length !== 20) throw new TypeError('Invalid address')
       else hash = _address().hash
     }
 
@@ -97,7 +97,7 @@ function p2pkh (a, opts) {
         a.output[23] !== OPS.OP_EQUALVERIFY ||
         a.output[24] !== OPS.OP_CHECKSIG) throw new TypeError('Output is invalid')
 
-      if (a.hash && !a.hash.equals(a.output.slice(3, 23))) throw new TypeError('Hash mismatch')
+      if (hash && !hash.equals(a.output.slice(3, 23))) throw new TypeError('Hash mismatch')
       else hash = a.output.slice(3, 23)
     }
 

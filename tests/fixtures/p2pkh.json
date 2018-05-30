@@ -136,6 +136,14 @@
       }
     },
     {
+      "description": "address.hash != output.hash",
+      "exception": "Hash mismatch",
+      "arguments": {
+        "address": "1NNY5hGuRnVsM1PNHxK4QCoqazyQuhNTwr",
+        "output": "OP_DUP OP_HASH160 ffffffffffffffffffffffffffffffffffffffff OP_EQUALVERIFY OP_CHECKSIG"
+      }
+    },
+    {
       "description": "output.hash != H",
       "exception": "Hash mismatch",
       "arguments": {
