@@ -6,7 +6,7 @@ let {
 } = require('bitcoinjs-lib')
 let typef = require('typeforce')
 let OPS = require('bitcoin-ops')
-let { lazyprop } = require('./lazy')
+let { lazyprop, lazyvalue } = require('./lazy')
 let EMPTY_BUFFER = Buffer.alloc(0)
 
 function stacksEqual (a, b) {
@@ -47,6 +47,8 @@ function p2wsh (a, opts) {
     witness: typef.maybe(typef.arrayOf(typef.Buffer))
   }, a)
 
+  let _address = lazyvalue(function () { return baddress.fromBech32(a.address) })
+
   let network = a.network || bnetworks.bitcoin
   let o = { network }
 
@@ -57,8 +59,7 @@ function p2wsh (a, opts) {
   lazyprop(o, 'hash', function () {
     if (a.output) return a.output.slice(2)
     if (a.address) return baddress.fromBech32(a.address).data
-    if (!o.redeem) return
-    if (o.redeem.output) return bcrypto.sha256(o.redeem.output)
+    if (o.redeem && o.redeem.output) return bcrypto.sha256(o.redeem.output)
   })
   lazyprop(o, 'output', function () {
     if (!o.hash) return
@@ -87,15 +88,17 @@ function p2wsh (a, opts) {
 
   // extended validation
   if (opts.validate) {
+    let hash
     if (a.address) {
-      let decode = baddress.fromBech32(a.address)
-      if (network.bech32 !== decode.prefix) throw new TypeError('Network mismatch')
-      if (decode.version !== 0x00) throw new TypeError('Invalid version')
-      if (decode.data.length !== 32) throw new TypeError('Invalid data')
+      if (_address().prefix !== network.bech32) throw new TypeError('Network mismatch')
+      if (_address().version !== 0x00) throw new TypeError('Invalid version')
+      if (_address().data.length !== 32) throw new TypeError('Invalid data')
+      else hash = _address().data
     }
 
     if (a.hash) {
-      if (o.hash && !a.hash.equals(o.hash)) throw new TypeError('Hash mismatch')
+      if (hash && !hash.equals(a.hash)) throw new TypeError('Hash mismatch')
+      else hash = a.hash
     }
 
     if (a.output) {
@@ -103,6 +106,9 @@ function p2wsh (a, opts) {
         a.output.length !== 34 ||
         a.output[0] !== OPS.OP_0 ||
         a.output[1] !== 0x20) throw new TypeError('Output is invalid')
+      let hash2 = a.output.slice(2)
+      if (hash && !hash.equals(hash2)) throw new TypeError('Hash mismatch')
+      else hash = hash2
     }
 
     if (a.redeem) {
@@ -118,10 +124,9 @@ function p2wsh (a, opts) {
       if (bscript.decompile(a.redeem.output).length === 0) throw new TypeError('Redeem.output is invalid')
 
       // match hash against other sources
-      if (a.output || a.address || a.hash) {
-        let redeemOutputHash = bcrypto.hash160(a.redeem.output)
-        if (o.hash.equals(redeemOutputHash)) throw new TypeError('Hash mismatch')
-      }
+      let hash2 = bcrypto.sha256(a.redeem.output)
+      if (hash && !hash.equals(hash2)) throw new TypeError('Hash mismatch')
+      else hash = hash2
 
       // attempt to transform redeem input to witness stack
       if (a.redeem.input && a.redeem.input.length > 0) {
@@ -134,6 +139,8 @@ function p2wsh (a, opts) {
         a.redeem = Object.assign({ witness: stack }, a.redeem)
         a.redeem.input = EMPTY_BUFFER
       }
+
+      if (a.witness && a.redeem.witness && !stacksEqual(a.witness, a.redeem.witness)) throw new TypeError('Witness and redeem.witness mismatch')
     }
 
     if (a.witness) {
