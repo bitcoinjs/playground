@@ -195,50 +195,57 @@
       }
     },
     {
-      "exception": "Output is invalid",
       "description": "Non OP_INT chunk (m)",
+      "exception": "Output is invalid",
       "arguments": {
         "output": "OP_RESERVED"
       }
     },
     {
-      "exception": "Output is invalid",
       "description": "Non OP_INT chunk (n)",
+      "exception": "Output is invalid",
       "arguments": {
         "output": "OP_1 OP_RESERVED"
       }
     },
     {
-      "exception": "Output is invalid",
       "description": "Missing OP_CHECKMULTISIG",
+      "exception": "Output is invalid",
       "arguments": {
         "output": "OP_1 OP_2 OP_RESERVED"
       }
     },
     {
-      "exception": "Output is invalid",
       "description": "m is 0",
+      "exception": "Output is invalid",
       "arguments": {
         "output": "OP_0 OP_2 OP_CHECKMULTISIG"
       }
     },
     {
+      "description": "n is 0 (m > n)",
       "exception": "Output is invalid",
+      "arguments": {
+        "output": "OP_2 OP_0 OP_CHECKMULTISIG"
+      }
+    },
+    {
       "description": "m > n",
+      "exception": "Output is invalid",
       "arguments": {
         "output": "OP_3 OP_2 OP_CHECKMULTISIG"
       }
     },
     {
-      "exception": "Output is invalid",
       "description": "n !== output pubkeys",
+      "exception": "Output is invalid",
       "arguments": {
         "output": "OP_1 030000000000000000000000000000000000000000000000000000000000000000 OP_2 OP_CHECKMULTISIG"
       }
     },
     {
-      "exception": "Output is invalid",
       "description": "Non-canonical output public key",
+      "exception": "Output is invalid",
       "arguments": {
         "output": "OP_1 ffff OP_1 OP_CHECKMULTISIG"
       }
@@ -316,8 +323,8 @@
       }
     },
     {
-      "exception": "Input is invalid",
       "description": "Missing OP_0",
+      "exception": "Input is invalid",
       "arguments": {
         "m": 2,
         "pubkeys": [
