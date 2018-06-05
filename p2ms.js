@@ -88,6 +88,10 @@ function p2ms (a, opts) {
     if (!a.signatures) return
     return bscript.compile([OPS.OP_0].concat(a.signatures))
   })
+  lazyprop(o, 'witness', function () {
+    if (!o.input) return
+    return []
+  })
 
   // extended validation
   if (opts.validate) {
