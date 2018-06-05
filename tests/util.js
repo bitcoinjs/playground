@@ -95,14 +95,14 @@ function preform (x) {
   return x
 }
 
-function from (path, object) {
+function from (path, object, result) {
   path = path.split('.')
+  result = result || {}
 
-  let result = {}
   let r = result
   path.forEach((k, i) => {
     if (i < path.length - 1) {
-      r[k] = {}
+      r[k] = r[k] || {}
 
       // recurse
       r = r[k]

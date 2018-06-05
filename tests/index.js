@@ -42,10 +42,13 @@ let u = require('./util')
         let dependencies = depends[key]
 
         dependencies.forEach(function (dependency) {
-          let args = u.from(dependency, detail)
+          if (!Array.isArray(dependency)) dependency = [dependency]
+
+          let args = {}
+          dependency.forEach(d => u.from(d, detail, args))
           let expected = u.from(key, detail)
 
-          it(key + ' derives from ' + dependency, function () {
+          it(key + ' derives from ' + JSON.stringify(dependency), function () {
             u.equate(fn(args), expected)
           })
         })
