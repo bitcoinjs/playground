@@ -30,5 +30,26 @@ let u = require('./util')
         }, new RegExp(f.exception))
       })
     })
+
+    // cross-verify dynamically too
+    if (!fixtures.dynamic) return
+    let { depends, details } = fixtures.dynamic
+
+    details.forEach(function (detail) {
+      detail = u.preform(detail)
+
+      for (let key in depends) {
+        let dependencies = depends[key]
+
+        dependencies.forEach(function (dependency) {
+          let args = u.from(dependency, detail)
+          let expected = u.from(key, detail)
+
+          it(key + ' derives from ' + dependency, function () {
+            u.equate(fn(args), expected)
+          })
+        })
+      }
+    })
   })
 })

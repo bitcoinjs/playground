@@ -39,7 +39,7 @@ function p2wsh (a, opts) {
 
     redeem: typef.maybe({
       input: typef.maybe(typef.Buffer),
-      network: typef.Object,
+      network: typef.maybe(typef.Object),
       output: typef.Buffer,
       witness: typef.maybe(typef.arrayOf(typef.Buffer))
     }),
@@ -112,7 +112,7 @@ function p2wsh (a, opts) {
     }
 
     if (a.redeem) {
-      if (network !== a.redeem.network) throw new TypeError('Network mismatch')
+      if (a.redeem.network && a.redeem.network !== network) throw new TypeError('Network mismatch')
 
       // is there two redeem sources?
       if (

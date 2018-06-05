@@ -37,7 +37,7 @@ function p2sh (a, opts) {
     output: typef.maybe(typef.BufferN(23)),
 
     redeem: typef.maybe({
-      network: typef.Object,
+      network: typef.maybe(typef.Object),
       output: typef.Buffer,
       input: typef.maybe(typef.Buffer),
       witness: typef.maybe(typef.arrayOf(typef.Buffer))
@@ -126,7 +126,7 @@ function p2sh (a, opts) {
     }
 
     if (a.redeem) {
-      if (a.redeem.network !== network) throw new TypeError('Network mismatch')
+      if (a.redeem.network && a.redeem.network !== network) throw new TypeError('Network mismatch')
       if (o.redeem) {
         if (a.redeem.output && !a.redeem.output.equals(o.redeem.output)) throw new TypeError('Redeem.output mismatch')
         if (a.redeem.input && !a.redeem.input.equals(o.redeem.input)) throw new TypeError('Redeem.input mismatch')

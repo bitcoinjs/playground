@@ -6,8 +6,8 @@
         "address": "bc1q6rgl33d3s9dugudw7n68yrryajkr3ha9q8q24j20zs62se4q9tsqdy0t2q"
       },
       "expected": {
-        "output": "OP_0 d0d1f8c5b1815bc471aef4f4720c64ecac38dfa501c0aac94f1434a866a02ae0",
         "hash": "d0d1f8c5b1815bc471aef4f4720c64ecac38dfa501c0aac94f1434a866a02ae0",
+        "output": "OP_0 d0d1f8c5b1815bc471aef4f4720c64ecac38dfa501c0aac94f1434a866a02ae0",
         "redeem": null,
         "input": null,
         "witness": null
@@ -49,8 +49,8 @@
       },
       "expected": {
         "address": "bc1qusxlgq9quu27ucxs7a2fg8nv0pycdzvxsjk9npyupupxw3y892ss2cq5ar",
-        "output": "OP_0 e40df400a0e715ee60d0f754941e6c784986898684ac59849c0f026744872aa1",
         "hash": "e40df400a0e715ee60d0f754941e6c784986898684ac59849c0f026744872aa1",
+        "output": "OP_0 e40df400a0e715ee60d0f754941e6c784986898684ac59849c0f026744872aa1",
         "input": null,
         "witness": null
       }
@@ -65,8 +65,8 @@
       },
       "expected": {
         "address": "bc1qpsl7el8wcx22f3fpdt3lm2wmzug7yyx2q3n8wzgtf37kps9tqy7skc7m3e",
-        "output": "OP_0 0c3fecfceec194a4c5216ae3fda9db1711e210ca046677090b4c7d60c0ab013d",
         "hash": "0c3fecfceec194a4c5216ae3fda9db1711e210ca046677090b4c7d60c0ab013d",
+        "output": "OP_0 0c3fecfceec194a4c5216ae3fda9db1711e210ca046677090b4c7d60c0ab013d",
         "input": null,
         "witness": null
       }
@@ -81,8 +81,8 @@
       },
       "expected": {
         "address": "bc1q6rgl33d3s9dugudw7n68yrryajkr3ha9q8q24j20zs62se4q9tsqdy0t2q",
-        "output": "OP_0 d0d1f8c5b1815bc471aef4f4720c64ecac38dfa501c0aac94f1434a866a02ae0",
         "hash": "d0d1f8c5b1815bc471aef4f4720c64ecac38dfa501c0aac94f1434a866a02ae0",
+        "output": "OP_0 d0d1f8c5b1815bc471aef4f4720c64ecac38dfa501c0aac94f1434a866a02ae0",
         "input": null,
         "witness": null
       }
@@ -97,8 +97,8 @@
       },
       "expected": {
         "address": "bc1qusxlgq9quu27ucxs7a2fg8nv0pycdzvxsjk9npyupupxw3y892ss2cq5ar",
-        "output": "OP_0 e40df400a0e715ee60d0f754941e6c784986898684ac59849c0f026744872aa1",
         "hash": "e40df400a0e715ee60d0f754941e6c784986898684ac59849c0f026744872aa1",
+        "output": "OP_0 e40df400a0e715ee60d0f754941e6c784986898684ac59849c0f026744872aa1",
         "redeem": {
           "input": ""
         },
@@ -124,8 +124,8 @@
       },
       "expected": {
         "address": "bc1qpsl7el8wcx22f3fpdt3lm2wmzug7yyx2q3n8wzgtf37kps9tqy7skc7m3e",
-        "output": "OP_0 0c3fecfceec194a4c5216ae3fda9db1711e210ca046677090b4c7d60c0ab013d",
         "hash": "0c3fecfceec194a4c5216ae3fda9db1711e210ca046677090b4c7d60c0ab013d",
+        "output": "OP_0 0c3fecfceec194a4c5216ae3fda9db1711e210ca046677090b4c7d60c0ab013d",
         "input": "",
         "witness": [
           "3045022100e4fce9ec72b609a2df1dc050c20dcf101d27faefb3e686b7a4cb067becdd5e8e022071287fced53806b08cf39b5ad58bbe614775b3776e98a9f8760af0d4d1d47a9501",
@@ -144,8 +144,8 @@
       },
       "expected": {
         "address": "bc1q6rgl33d3s9dugudw7n68yrryajkr3ha9q8q24j20zs62se4q9tsqdy0t2q",
-        "output": "OP_0 d0d1f8c5b1815bc471aef4f4720c64ecac38dfa501c0aac94f1434a866a02ae0",
         "hash": "d0d1f8c5b1815bc471aef4f4720c64ecac38dfa501c0aac94f1434a866a02ae0",
+        "output": "OP_0 d0d1f8c5b1815bc471aef4f4720c64ecac38dfa501c0aac94f1434a866a02ae0",
         "redeem": {
           "output": "03e15819590382a9dd878f01e2f0cbce541564eb415e43b440472d883ecd283058 OP_CHECKSIG",
           "input": "",
@@ -167,8 +167,8 @@
       },
       "expected": {
         "address": "bc1qpsl7el8wcx22f3fpdt3lm2wmzug7yyx2q3n8wzgtf37kps9tqy7skc7m3e",
-        "output": "OP_0 0c3fecfceec194a4c5216ae3fda9db1711e210ca046677090b4c7d60c0ab013d",
         "hash": "0c3fecfceec194a4c5216ae3fda9db1711e210ca046677090b4c7d60c0ab013d",
+        "output": "OP_0 0c3fecfceec194a4c5216ae3fda9db1711e210ca046677090b4c7d60c0ab013d",
         "redeem": {
           "output": "OP_0 c30afa58ae0673b00a45b5c17dff4633780f1400",
           "input": "",
@@ -269,5 +269,38 @@
         ]
       }
     }
-  ]
+  ],
+  "dynamic": {
+    "depends": {
+      "address": [ "address", "output", "hash", "redeem.output", "witness" ],
+      "hash": [ "address", "output", "hash", "redeem.output", "witness" ],
+      "output":  [ "address", "output", "hash", "redeem.output", "witness" ],
+      "redeem.output": [ "witness" ],
+      "redeem.input": [ "witness" ],
+      "redeem.witness": [ "witness" ],
+      "input": [ "witness" ],
+      "witness": [ "redeem" ]
+    },
+    "details": [
+      {
+        "address": "bc1qpsl7el8wcx22f3fpdt3lm2wmzug7yyx2q3n8wzgtf37kps9tqy7skc7m3e",
+        "hash": "0c3fecfceec194a4c5216ae3fda9db1711e210ca046677090b4c7d60c0ab013d",
+        "output": "OP_0 0c3fecfceec194a4c5216ae3fda9db1711e210ca046677090b4c7d60c0ab013d",
+        "redeem": {
+          "output": "OP_0 c30afa58ae0673b00a45b5c17dff4633780f1400",
+          "input": "",
+          "witness": [
+            "3045022100e4fce9ec72b609a2df1dc050c20dcf101d27faefb3e686b7a4cb067becdd5e8e022071287fced53806b08cf39b5ad58bbe614775b3776e98a9f8760af0d4d1d47a9501",
+            "03e15819590382a9dd878f01e2f0cbce541564eb415e43b440472d883ecd283058"
+          ]
+        },
+        "input": "",
+        "witness": [
+          "3045022100e4fce9ec72b609a2df1dc050c20dcf101d27faefb3e686b7a4cb067becdd5e8e022071287fced53806b08cf39b5ad58bbe614775b3776e98a9f8760af0d4d1d47a9501",
+          "03e15819590382a9dd878f01e2f0cbce541564eb415e43b440472d883ecd283058",
+          "0014c30afa58ae0673b00a45b5c17dff4633780f1400"
+        ]
+      }
+    ]
+  }
 }

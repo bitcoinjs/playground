@@ -33,9 +33,9 @@ function carryOver (a, b) {
 }
 
 function equateBase (a, b, context) {
-  if ('output' in b) t.strictEqual(tryASM(a.output), tryASM(b.output), `Inequal ${context}*.output`)
-  if ('input' in b) t.strictEqual(tryASM(a.input), tryASM(b.input), `Inequal ${context}*.input`)
-  if ('witness' in b) t.deepEqual(tryHex(a.witness), tryHex(b.witness), `Inequal ${context}*.witness`)
+  if ('output' in b) t.strictEqual(tryASM(a.output), tryASM(b.output), `Inequal ${context}output`)
+  if ('input' in b) t.strictEqual(tryASM(a.input), tryASM(b.input), `Inequal ${context}input`)
+  if ('witness' in b) t.deepEqual(tryHex(a.witness), tryHex(b.witness), `Inequal ${context}witness`)
 }
 
 function equate (a, b, args) {
@@ -95,7 +95,28 @@ function preform (x) {
   return x
 }
 
+function from (path, object) {
+  path = path.split('.')
+
+  let result = {}
+  let r = result
+  path.forEach((k, i) => {
+    if (i < path.length - 1) {
+      r[k] = {}
+
+      // recurse
+      r = r[k]
+      object = object[k]
+    } else {
+      r[k] = object[k]
+    }
+  })
+
+  return result
+}
+
 module.exports = {
+  from,
   equate,
   preform
 }
