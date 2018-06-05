@@ -48,6 +48,7 @@ function p2wsh (a, opts) {
   }, a)
 
   let _address = lazyvalue(function () { return baddress.fromBech32(a.address) })
+  let _rchunks = lazyvalue(function () { return bscript.decompile(a.redeem.input) })
 
   let network = a.network || bnetworks.bitcoin
   let o = { network }
@@ -81,9 +82,19 @@ function p2wsh (a, opts) {
     return EMPTY_BUFFER
   })
   lazyprop(o, 'witness', function () {
-    if (!o.redeem) return
-    if (!o.redeem.witness) return
-    return [].concat(o.redeem.witness, o.redeem.output)
+    // transform redeem input to witness stack?
+    if (a.redeem && a.redeem.input && a.redeem.input.length > 0) {
+      let stack = bscript.toStack(_rchunks())
+
+      // assign, and blank the existing input
+      o.redeem = Object.assign({ witness: stack }, a.redeem)
+      o.redeem.input = EMPTY_BUFFER
+      return [].concat(stack, a.redeem.output)
+    }
+
+    if (!a.redeem) return
+    if (!a.redeem.witness) return
+    return [].concat(a.redeem.witness, a.redeem.output)
   })
 
   // extended validation
@@ -128,25 +139,12 @@ function p2wsh (a, opts) {
       if (hash && !hash.equals(hash2)) throw new TypeError('Hash mismatch')
       else hash = hash2
 
-      // attempt to transform redeem input to witness stack
-      if (a.redeem.input && a.redeem.input.length > 0) {
-        let redeemInputChunks = bscript.decompile(a.redeem.input)
-        if (!bscript.isPushOnly(redeemInputChunks)) throw new TypeError('Non push-only scriptSig')
-
-        let stack = bscript.toStack(redeemInputChunks)
-
-        // assign, and blank the existing input
-        a.redeem = Object.assign({ witness: stack }, a.redeem)
-        a.redeem.input = EMPTY_BUFFER
-      }
-
+      if (a.redeem.input && !bscript.isPushOnly(_rchunks())) throw new TypeError('Non push-only scriptSig')
       if (a.witness && a.redeem.witness && !stacksEqual(a.witness, a.redeem.witness)) throw new TypeError('Witness and redeem.witness mismatch')
     }
 
     if (a.witness) {
-      if (o.witness && !stacksEqual(a.witness, o.witness)) throw new TypeError('Witness mismatch')
-      if (a.redeem && a.redeem.witness && !stacksEqual(a.redeem.witness, o.redeem.witness)) throw new TypeError('Witness and redeem.witness mismatch')
-      if (a.redeem && !a.redeem.output.equals(o.redeem.output)) throw new TypeError('Witness and redeem.output mismatch')
+      if (a.redeem && !a.redeem.output.equals(a.witness[a.witness.length - 1])) throw new TypeError('Witness and redeem.output mismatch')
     }
   }
 

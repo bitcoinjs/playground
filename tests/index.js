@@ -35,8 +35,8 @@ let u = require('./util')
     if (!fixtures.dynamic) return
     let { depends, details } = fixtures.dynamic
 
-    details.forEach(function (detail) {
-      detail = u.preform(detail)
+    details.forEach(function (f) {
+      let detail = u.preform(f)
 
       for (let key in depends) {
         let dependencies = depends[key]
@@ -48,7 +48,7 @@ let u = require('./util')
           dependency.forEach(d => u.from(d, detail, args))
           let expected = u.from(key, detail)
 
-          it(key + ' derives from ' + JSON.stringify(dependency), function () {
+          it(f.description + ', ' + key + ' derives from ' + JSON.stringify(dependency), function () {
             u.equate(fn(args), expected)
           })
         })
