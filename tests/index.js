@@ -41,15 +41,18 @@ let u = require('./util')
 
     details.forEach(function (f) {
       let detail = u.preform(f)
+      let disabled = {}
+      if (f.disabled) f.disabled.forEach(function (k) { disabled[k] = true })
 
       for (let key in depends) {
+        if (key in disabled) continue
         let dependencies = depends[key]
 
         dependencies.forEach(function (dependency) {
           if (!Array.isArray(dependency)) dependency = [dependency]
 
           let args = {}
-          dependency.forEach(d => u.from(d, detail, args))
+          dependency.forEach(function (d) { u.from(d, detail, args) })
           let expected = u.from(key, detail)
 
           it(f.description + ', ' + key + ' derives from ' + JSON.stringify(dependency), function () {
