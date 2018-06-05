@@ -165,5 +165,31 @@
         ]
       }
     }
-  ]
+  ],
+  "dynamic": {
+    "depends": {
+      "address": [ "address", "output", "hash", "pubkey", "witness" ],
+      "hash": [ "address", "output", "hash", "pubkey", "witness" ],
+      "output": [ "address", "output", "hash", "pubkey", "witness" ],
+      "pubkey": [ "witness" ],
+      "signature": [ "witness" ],
+      "input": [ "witness" ],
+      "witness": [ [ "pubkey", "signature" ] ]
+    },
+    "details": [
+      {
+        "description": "p2wpkh",
+        "address": "bc1qafk4yhqvj4wep57m62dgrmutldusqde8adh20d",
+        "hash": "ea6d525c0c955d90d3dbd29a81ef8bfb79003727",
+        "output": "OP_0 ea6d525c0c955d90d3dbd29a81ef8bfb79003727",
+        "pubkey": "031000000000000000000000000000000000000000000000000000000000000000",
+        "signature": "300602010002010001",
+        "input": "",
+        "witness": [
+          "300602010002010001",
+          "031000000000000000000000000000000000000000000000000000000000000000"
+        ]
+      }
+    ]
+  }
 }
