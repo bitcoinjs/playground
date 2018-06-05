@@ -9,15 +9,19 @@ let u = require('./util')
     let fixtures = require('./fixtures/' + p)
 
     fixtures.valid.forEach(function (f, i) {
+      let args = u.preform(f.arguments)
+
       it(f.description + ' as expected', function () {
-        let args = u.preform(f.arguments)
         let actual = fn(args, f.options)
-        let actualUV = fn(args, Object.assign({}, f.options, {
+        u.equate(actual, f.expected, f.arguments)
+      })
+
+      it(f.description + ' as expected (no validation)', function () {
+        let actual = fn(args, Object.assign({}, f.options, {
           validate: false
         }))
 
         u.equate(actual, f.expected, f.arguments)
-        u.equate(actualUV, f.expected, f.arguments)
       })
     })
 
